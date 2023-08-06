@@ -1,26 +1,26 @@
 #!/bin/bash -e
 
 MAGENTO_DIR=$(pwd)
-
 WARDEN_DIR="$(dirname $(pwd))/warden"
 WARDEN_BIN="${WARDEN_DIR}/bin/warden"
 
 echo "MAGENTO_DIR: ${MAGENTO_DIR}"
-
 echo "WARDEN_DIR: ${WARDEN_DIR}"
 echo "WARDEN_BIN: ${WARDEN_BIN}"
 
 set -x
-exit
 
 # fresh clone of warden
 rm -rf ${WARDEN_DIR} || true
+rm ${MAGENTO_DIR}/.env || true
 git clone --depth 1 https://github.com/wardenenv/warden.git ${WARDEN_DIR}
 
 # configure warden
 ${WARDEN_BIN} env-init magento2 magento2
 
 
+rm ${MAGENTO_DIR}/nginx.conf ${MAGENTO_DIR}/nginx.conf.tmp || true
+git checkout nginx.conf
 
 cp nginx.conf.sample nginx.conf
 sed -i '0,/^# PHP entry point for setup application$/d' nginx.conf
@@ -46,7 +46,52 @@ tail -n +$line nginx.conf >> nginx.conf.tmp
 mv nginx.conf.tmp nginx.conf
 
 
-https://docs.warden.dev/environments/customizing.html
+# https://docs.warden.dev/environments/customizing.html
+# configure warden
+sed -i 's/WARDEN_ELASTICSEARCH=.*/WARDEN_ELASTICSEARCH=1/g' .env
+sed -i 's/WARDEN_OPENSEARCH=.*/WARDEN_OPENSEARCH=0/g' .env
+sed -i 's/WARDEN_VARNISH=.*/WARDEN_VARNISH=0/g' .env
+sed -i 's/WARDEN_RABBITMQ=.*/WARDEN_RABBITMQ=0/g' .env
+#sed -i 's/WARDEN_TEST_DB=.*/WARDEN_TEST_DB=1/g' .env
+
+# bring up the stack
+${WARDEN_BIN} env up
+
+#echo ${{secrets.DEPLOY_PASSWORD}} | sudo -S chmod -R a+rw .
+sudo -S chmod -R a+rw .
+
+# configure integration tests
+rm ${MAGENTO_DIR}/dev/tests/integration/etc/install-config-mysql.php || true
+cp ${MAGENTO_DIR}/dev/tests/integration/etc/install-config-mysql.php.dist ${MAGENTO_DIR}/dev/tests/integration/etc/install-config-mysql.php
+#  (see backup in root)
+
+rm ${MAGENTO_DIR}/dev/tests/integration/phpunit.xml || true
+cp ${MAGENTO_DIR}/dev/tests/integration/phpunit.xml.dist ${MAGENTO_DIR}/dev/tests/integration/phpunit.xml
+
+/workspaces/warden/bin/warden env exec -T php-fpm bin/magento config:set cms/wysiwyg/enabled disabled
+@adamzero1 ➜ /workspaces/mageos-magento2 (nx-integration-tests) $ cd dev/tests/integration
+@adamzero1 ➜ .../mageos-magento2/dev/tests/integration (nx-integration-tests) $ ../../../vendor/bin/phpunit
+
+/workspaces/warden/bin/warden env exec -T -w /var/www/html/dev/tests/integration php-fpm ../../../vendor/bin/phpunit
+echo "ready?"
+exit;
+
+# ime ../../../vendor/bin/phpunit --testsuite "Magento Integration Tests" --testdox
+# keeps getting terminated
+```
+Auth (Magento\Backend\Controller\Adminhtml\Auth)
+ ✔ Not logged login action
+ ✔ Logged login action
+ ✔ Not logged login action with redirect
+ ✔ Logout action
+ ✔ Denied json action
+ ✔ Denied iframe action
+ ✔ Incorrect login with login·dummy·user
+ ✔ Incorrect login with login·without·role
+ ✔ Incorrect login with login·not·active·user
+Terminated
+```
+
 
 
 bin/magento setup:install \
@@ -83,8 +128,8 @@ bin/magento setup:install \
   --admin-lastname="Admin" \
   --admin-email="admin@example.com"
 
-/workspaces/warden/bin/warden env exec -T php-fpm bin/magento config:set --lock-env web/unsecure/base_url https://adamzero1-vigilant-space-fortnight-gj4grxvv5hwv4v-80.preview.app.github.dev/
-/workspaces/warden/bin/warden env exec -T php-fpm bin/magento config:set --lock-env web/secure/base_url https://adamzero1-vigilant-space-fortnight-gj4grxvv5hwv4v-80.preview.app.github.dev/
+#/workspaces/warden/bin/warden env exec -T php-fpm bin/magento config:set --lock-env web/unsecure/base_url https://adamzero1-vigilant-space-fortnight-gj4grxvv5hwv4v-80.preview.app.github.dev/
+#/workspaces/warden/bin/warden env exec -T php-fpm bin/magento config:set --lock-env web/secure/base_url https://adamzero1-vigilant-space-fortnight-gj4grxvv5hwv4v-80.preview.app.github.dev/
 /workspaces/warden/bin/warden env exec -T php-fpm bin/magento config:set cms/wysiwyg/enabled disabled
 
 /workspaces/warden/bin/warden env exec -T php-fpm bin/magento config:set admin/security/admin_account_sharing 1

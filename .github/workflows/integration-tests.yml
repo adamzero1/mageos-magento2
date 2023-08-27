@@ -17,7 +17,7 @@ jobs:
       database_versions: ${{ steps.set-matrix.outputs.database_versions }}
       search_versions: ${{ steps.set-matrix.outputs.search_versions }}
       message_queue_versions: ${{ steps.set-matrix.outputs.message_queue_versions }}
-      cache_verions: ${{ steps.set-matrix.outputs.cache_verions }}
+      cache_versions: ${{ steps.set-matrix.outputs.cache_versions }}
       http_cache_versions: ${{ steps.set-matrix.outputs.http_cache_versions }}
     steps:
       - name: Checkout PR commit
@@ -175,3 +175,5 @@ jobs:
           echo "message_queue Versions: ${{ steps.set-matrix.outputs.message_queue_versions }}"
           echo "cache Versions: ${{ steps.set-matrix.outputs.cache_versions }}"
           echo "http_cache Versions: ${{ steps.set-matrix.outputs.http_cache_versions }}"
+      
+      

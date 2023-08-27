@@ -82,7 +82,7 @@ jobs:
         run: composer install
 
       # could probably swap this to a docker container in future
-      - name: Install NPM
+      - name: Install NX
         working-directory: ./main
         run: |
           npm install -g nx@15.4.1
@@ -211,7 +211,7 @@ jobs:
         run: composer install
 
       # could probably swap this to a docker container in future
-      - name: Install NPM
+      - name: Install NX
         working-directory: ./main
         run: |
           npm install -g nx@15.4.1
@@ -245,4 +245,5 @@ jobs:
         run: |
           AFFECTED_OUTPUT=/tmp/affect.json
           nx print-affected --head=HEAD --base=remotes/origin/${{ github.event.pull_request.base.ref }} > ${AFFECTED_OUTPUT}
+          cat ${AFFECTED_OUTPUT}
           echo "Affected Projects: $(jq .projects ${AFFECTED_OUTPUT})"

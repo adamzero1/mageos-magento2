@@ -4,7 +4,7 @@ on:
   pull_request:
     branches:
       - 2.4-develop
-      - nx-work-integration-tests
+      - nx-integration-tests
 
 permissions:
   contents: write

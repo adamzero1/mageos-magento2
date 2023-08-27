@@ -72,7 +72,7 @@ cp ${MAGENTO_DIR}/dev/tests/integration/phpunit.xml.dist ${MAGENTO_DIR}/dev/test
 @adamzero1 ➜ /workspaces/mageos-magento2 (nx-integration-tests) $ cd dev/tests/integration
 @adamzero1 ➜ .../mageos-magento2/dev/tests/integration (nx-integration-tests) $ ../../../vendor/bin/phpunit
 
-/workspaces/warden/bin/warden env exec -T -w /var/www/html/dev/tests/integration php-fpm ../../../vendor/bin/phpunit
+/workspaces/warden/bin/warden env exec -T -w /var/www/html/dev/tests/integration php-fpm ../../../vendor/bin/phpunit --testdox >> test_$(date +%s) 2>&1
 echo "ready?"
 exit;
 
@@ -91,7 +91,7 @@ Auth (Magento\Backend\Controller\Adminhtml\Auth)
  ✔ Incorrect login with login·not·active·user
 Terminated
 ```
-
+x 2
 
 
 bin/magento setup:install \

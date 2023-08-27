@@ -1,4 +1,4 @@
-name: Integration Testsz
+name: Integration Tests
 run-name: ${{ github.actor }} is running Unit Tests
 on:
   pull_request:
@@ -105,7 +105,7 @@ jobs:
             ./main/nx
             ./main/nx.json
             ./main/workspace.json
-        key: nx-docker-wrapper-${{ github.event.pull_request.head.sha }}
+          key: nx-docker-wrapper-${{ github.event.pull_request.head.sha }}
       
       - name: Copy in NX files
         working-directory: ./main
@@ -124,9 +124,9 @@ jobs:
         with:
           path: |
             ./main/node_modules
-        key: npm-docker-wrapper-${{ github.event.pull_request.head.sha }}
-        restore-keys: |
-          npm-docker-wrapper-${{ hashFiles('./main/package-lock.json') }}
+          key: npm-docker-wrapper-${{ github.event.pull_request.head.sha }}
+          restore-keys: |
+            npm-docker-wrapper-${{ hashFiles('./main/package-lock.json') }}
 
       - name: Install NPM Deps
         working-directory: ./main

@@ -13,11 +13,6 @@ permissions:
 jobs:
   integration-tests:
     needs: matrix-calculator
-    strategy:
-      fail-fast: false
-      matrix:
-        php_version: "8.2"
-        database_version: "10.6"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PR commit
@@ -97,14 +92,14 @@ jobs:
           sed -i 's/WARDEN_DB=.*/WARDEN_DB=1/g' .env
           sed -i 's/WARDEN_TEST_DB=.*/WARDEN_TEST_DB=0/g' .env
           sed -i 's/MYSQL_DISTRIBUTION=.*/MYSQL_DISTRIBUTION=0/g' .env
-          sed -i 's/MYSQL_DISTRIBUTION_VERSION=.*/MYSQL_DISTRIBUTION_VERSION=${{ matrix.database_version }}/g' .env
+          sed -i 's/MYSQL_DISTRIBUTION_VERSION=.*/MYSQL_DISTRIBUTION_VERSION=10.6/g' .env
           sed -i 's/WARDEN_ELASTICSEARCH=.*/WARDEN_ELASTICSEARCH=1/g' .env
           sed -i 's/WARDEN_OPENSEARCH=.*/WARDEN_OPENSEARCH=0/g' .env
           sed -i 's/WARDEN_ELASTICHQ=.*/WARDEN_ELASTICHQ=0/g' .env
           sed -i 's/WARDEN_VARNISH=.*/WARDEN_VARNISH=1/g' .env
           sed -i 's/WARDEN_RABBITMQ=.*/WARDEN_RABBITMQ=0/g' .env
           sed -i 's/WARDEN_REDIS=.*/WARDEN_REDIS=1/g' .env
-          sed -i 's/PHP_VERSION=.*/PHP_VERSION=${{ matrix.php_version }}/g' .env
+          sed -i 's/PHP_VERSION=.*/PHP_VERSION=8.2/g' .env
           ${DEN} env up
           echo ${{secrets.DEPLOY_PASSWORD}} | sudo -S chmod -R a+rw .
       - name: Configure PHPUnit

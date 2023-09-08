@@ -45,6 +45,113 @@ jobs:
 
   nx-diff-calculator:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR commit
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: main
+          # Need to do this otherwise Nx cant determine diff
+          fetch-depth: 0
+
+      - name: Fetch base
+        working-directory: ./main
+        run: git fetch origin ${{ github.event.pull_request.base.ref }}
+
+      - name: Install Composer
+        uses: php-actions/composer@v6
+        with:
+          # Run the dummy help command after installing Composer (otherwise defaults to install)
+          command: help
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        working-directory: ./main
+        run: echo "composer_cache_dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Install Composer Cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.composer-cache.outputs.composer_cache_dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/main/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer Dependencies
+        working-directory: ./main
+        run: composer install
+
+      # could probably swap this to a docker container in future
+      - name: Install NX
+        working-directory: ./main
+        run: |
+          npm install -g nx@15.4.1
+
+      # should be able to cache this in future also
+      - name: Checkout Nx Repo
+        uses: actions/checkout@v3
+        with:
+          repository: adamzero1/nx-for-php
+          ref: docker-wrapper
+          path: nx
+
+      - name: Nx Cache
+        id: nx-cache
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-nx
+        with:
+          path: |
+            ./main/nx
+            ./main/nx.json
+            ./main/workspace.json
+          key: nx-docker-wrapper-${{ github.event.pull_request.head.sha }}
+
+      - name: Copy in NX files
+        working-directory: ./main
+        run: |
+          NXDIR="../nx"
+          cp -r ${NXDIR}/nx ./
+          cp ${NXDIR}/nx.json ./
+          cp ${NXDIR}/package.json ./
+          cp ${NXDIR}/package-lock.json ./
+
+      - name: NPM Cache
+        id: npm-cache
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-npm
+        with:
+          path: |
+            ./main/node_modules
+          key: npm-docker-wrapper-${{ github.event.pull_request.head.sha }}
+          restore-keys: |
+            npm-docker-wrapper-${{ hashFiles('./main/package-lock.json') }}
+
+      - name: Install NPM Deps
+        working-directory: ./main
+        run: |
+          npm ci
+
+      - name: Generate Nx Workspace
+        working-directory: ./main
+        run: |
+          npm run generate-workspace
+
+      - name: Print Affected
+        working-directory: ./main
+        run: |
+          AFFECTED_OUTPUT=/tmp/affect.json
+          nx print-affected --head=HEAD --base=remotes/origin/${{ github.event.pull_request.base.ref }} > ${AFFECTED_OUTPUT}
+          echo "Affected Projects: $(jq .projects ${AFFECTED_OUTPUT})"
+
+      # just to get some timings
+      - name: Print Affected2
+        working-directory: ./main
+        run: |
+          AFFECTED_OUTPUT=/tmp/affect.json
+          nx print-affected --head=HEAD --base=remotes/origin/${{ github.event.pull_request.base.ref }} > ${AFFECTED_OUTPUT}
+          echo "Affected Projects: $(jq .projects ${AFFECTED_OUTPUT})"
 
   integration-tests:
     needs: matrix-calculator

@@ -35,7 +35,7 @@ jobs:
         run: |
           export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
           rm .env
-          ${DEN} env-init mageos mageos
+          ${DEN} env-init magento2 mageos
           sed -i 's/WARDEN_DB=.*/WARDEN_DB=1/g' .env
           sed -i 's/WARDEN_TEST_DB=.*/WARDEN_TEST_DB=0/g' .env
           sed -i 's/MYSQL_DISTRIBUTION=.*/MYSQL_DISTRIBUTION=0/g' .env

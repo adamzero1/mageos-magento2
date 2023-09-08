@@ -1,4 +1,4 @@
-name: Integration Tests
+name: Test
 run-name: ${{ github.actor }} is running Unit Tests
 on:
   pull_request:

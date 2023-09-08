@@ -1,6 +1,7 @@
 name: Test
 run-name: ${{ github.actor }} is running Unit Tests
 on:
+  workflow_dispatch: {}
   pull_request:
     branches:
       - 2.4-develop

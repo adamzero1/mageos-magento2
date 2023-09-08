@@ -33,10 +33,7 @@ jobs:
       - name: Init / Configure Den
         working-directory: ./main
         run: |
-          pwd
-          ls -la /home/runner/work/mageos-magento2/mageos-magento2/
-          ls -la /home/runner/work/mageos-magento2/
-          export DEN=/home/runner/work/mageos-magento2/warden/bin/warden
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
           ${DEN} env-init magento2 magento2
           sed -i 's/WARDEN_DB=.*/WARDEN_DB=1/g' .env
           sed -i 's/WARDEN_TEST_DB=.*/WARDEN_TEST_DB=0/g' .env
@@ -60,7 +57,7 @@ jobs:
       - name: Run PHPUnit Nx
         working-directory: ./main
         run: |
-          export DEN=/home/runner/work/magento2/magento2/warden/bin/warden
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
           nx affected --target=test:unit --head=HEAD --base=remotes/origin/${{ github.event.pull_request.base.ref }}
           cp nginx.conf.sample nginx.conf
           sed -i '0,/^# PHP entry point for setup application$/d' nginx.conf

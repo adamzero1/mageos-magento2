@@ -29,13 +29,17 @@ jobs:
         with:
           repository: wardenenv/warden
           path: warden
-        run: |
-          pwd
-          ls -la
 
       - name: Init / Configure Den
         working-directory: ./main
         run: |
+          pwd
+          ls -la
+          ls -la /home/runner/
+          ls -la /home/runner/work/
+          ls -la /home/runner/work/magento2/
+          ls -la /home/runner/work/magento2/magento2/
+          ls -la /home/runner/work/magento2/magento2/warden/
           export DEN=/home/runner/work/magento2/magento2/warden/bin/warden
           ${DEN} env-init magento2 magento2
           sed -i 's/WARDEN_DB=.*/WARDEN_DB=1/g' .env

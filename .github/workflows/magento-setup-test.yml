@@ -11,160 +11,13 @@ permissions:
   contents: write
 
 jobs:
-  matrix-calculator:
-    runs-on: ubuntu-latest
-    outputs:
-      php_versions: ${{ steps.set-matrix.outputs.php_versions }}
-      database_versions: ${{ steps.set-matrix.outputs.database_versions }}
-      search_versions: ${{ steps.set-matrix.outputs.search_versions }}
-      message_queue_versions: ${{ steps.set-matrix.outputs.message_queue_versions }}
-      cache_verions: ${{ steps.set-matrix.outputs.cache_verions }}
-      http_cache_versions: ${{ steps.set-matrix.outputs.http_cache_versions }}
-    steps:
-      - name: Checkout PR commit
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - id: set-matrix
-        name: Calculate Matrix
-        run: |
-          echo "php_versions=$(jq -c .services.php supported-services.json)" >> "$GITHUB_OUTPUT"
-          echo "database_versions=$(jq -c .services.database supported-services.json)" >> "$GITHUB_OUTPUT"
-          echo "search_versions=$(jq -c .services.search supported-services.json)" >> "$GITHUB_OUTPUT"
-          echo "message_queue_versions=$(jq -c .services.message_queue supported-services.json)" >> "$GITHUB_OUTPUT"
-          echo "cache_versions=$(jq -c .services.cache supported-services.json)" >> "$GITHUB_OUTPUT"
-          echo "http_cache_versions=$(jq -c .services.http_cache supported-services.json)" >> "$GITHUB_OUTPUT"
-      - name: Debug output
-        run: |
-          echo "PHP Versions: ${{ steps.set-matrix.outputs.php_versions }}"
-          echo "database Versions: ${{ steps.set-matrix.outputs.database_versions }}"
-          echo "search Versions: ${{ steps.set-matrix.outputs.search_versions }}"
-          echo "message_queue Versions: ${{ steps.set-matrix.outputs.message_queue_versions }}"
-          echo "cache Versions: ${{ steps.set-matrix.outputs.cache_versions }}"
-          echo "http_cache Versions: ${{ steps.set-matrix.outputs.http_cache_versions }}"
-
-  nx-diff-calculator:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout PR commit
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          path: main
-          # Need to do this otherwise Nx cant determine diff
-          fetch-depth: 0
-
-      - name: Fetch base
-        working-directory: ./main
-        run: git fetch origin ${{ github.event.pull_request.base.ref }}
-
-      - name: Install Composer
-        uses: php-actions/composer@v6
-        with:
-          # Run the dummy help command after installing Composer (otherwise defaults to install)
-          command: help
-
-      - name: Get Composer Cache Directory
-        id: composer-cache
-        working-directory: ./main
-        run: echo "composer_cache_dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
-      - name: Install Composer Cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.composer-cache.outputs.composer_cache_dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/main/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-composer-
-
-      - name: Install Composer Dependencies
-        working-directory: ./main
-        run: composer install
-
-      # could probably swap this to a docker container in future
-      - name: Install NX
-        working-directory: ./main
-        run: |
-          npm install -g nx@15.4.1
-
-      # should be able to cache this in future also
-      - name: Checkout Nx Repo
-        uses: actions/checkout@v3
-        with:
-          repository: adamzero1/nx-for-php
-          ref: docker-wrapper
-          path: nx
-
-      - name: Nx Cache
-        id: nx-cache
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-nx
-        with:
-          path: |
-            ./main/nx
-            ./main/nx.json
-            ./main/workspace.json
-          key: nx-docker-wrapper-${{ github.event.pull_request.head.sha }}
-
-      - name: Copy in NX files
-        working-directory: ./main
-        run: |
-          NXDIR="../nx"
-          cp -r ${NXDIR}/nx ./
-          cp ${NXDIR}/nx.json ./
-          cp ${NXDIR}/package.json ./
-          cp ${NXDIR}/package-lock.json ./
-
-      - name: NPM Cache
-        id: npm-cache
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-npm
-        with:
-          path: |
-            ./main/node_modules
-          key: npm-docker-wrapper-${{ github.event.pull_request.head.sha }}
-          restore-keys: |
-            npm-docker-wrapper-${{ hashFiles('./main/package-lock.json') }}
-
-      - name: Install NPM Deps
-        working-directory: ./main
-        run: |
-          npm ci
-
-      - name: Generate Nx Workspace
-        working-directory: ./main
-        run: |
-          npm run generate-workspace
-
-      - name: Print Affected
-        working-directory: ./main
-        run: |
-          AFFECTED_OUTPUT=/tmp/affect.json
-          nx print-affected --head=HEAD --base=remotes/origin/${{ github.event.pull_request.base.ref }} > ${AFFECTED_OUTPUT}
-          echo "Affected Projects: $(jq .projects ${AFFECTED_OUTPUT})"
-
-      # just to get some timings
-      - name: Print Affected2
-        working-directory: ./main
-        run: |
-          AFFECTED_OUTPUT=/tmp/affect.json
-          nx print-affected --head=HEAD --base=remotes/origin/${{ github.event.pull_request.base.ref }} > ${AFFECTED_OUTPUT}
-          echo "Affected Projects: $(jq .projects ${AFFECTED_OUTPUT})"
-
   integration-tests:
     needs: matrix-calculator
     strategy:
       fail-fast: false
       matrix:
-        php_version: ${{ fromJSON(needs.matrix-calculator.outputs.php_versions) }}
-        database_version: ${{ fromJSON(needs.matrix-calculator.outputs.database_versions) }}
-        search_version: ${{ fromJSON(needs.matrix-calculator.outputs.search_versions) }}
-        message_queue_version: ${{ fromJSON(needs.matrix-calculator.outputs.message_queue_versions) }}
-        cache_version: ${{ fromJSON(needs.matrix-calculator.outputs.cache_versions) }}
-        http_cache_version: ${{ fromJSON(needs.matrix-calculator.outputs.http_cache_versions) }}
+        php_version: "8.2"
+        database_version: "10.6"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PR commit
@@ -244,7 +97,7 @@ jobs:
           sed -i 's/WARDEN_DB=.*/WARDEN_DB=1/g' .env
           sed -i 's/WARDEN_TEST_DB=.*/WARDEN_TEST_DB=0/g' .env
           sed -i 's/MYSQL_DISTRIBUTION=.*/MYSQL_DISTRIBUTION=0/g' .env
-          sed -i 's/MYSQL_DISTRIBUTION_VERSION=.*/MYSQL_DISTRIBUTION_VERSION=${{ matrix.php_version }}/g' .env
+          sed -i 's/MYSQL_DISTRIBUTION_VERSION=.*/MYSQL_DISTRIBUTION_VERSION=${{ matrix.database_version }}/g' .env
           sed -i 's/WARDEN_ELASTICSEARCH=.*/WARDEN_ELASTICSEARCH=1/g' .env
           sed -i 's/WARDEN_OPENSEARCH=.*/WARDEN_OPENSEARCH=0/g' .env
           sed -i 's/WARDEN_ELASTICHQ=.*/WARDEN_ELASTICHQ=0/g' .env

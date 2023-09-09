@@ -116,7 +116,7 @@ jobs:
                ${DEN} env exec -T php-fpm bin/magento config:set admin/security/admin_account_sharing 1
                ${DEN} env exec -T php-fpm bin/magento config:set admin/security/use_form_key 0
                ${DEN} env exec -T php-fpm bin/magento config:set web/seo/use_rewrites 1
-               ${DEN} env exec -T php-fpm bin/magento config:set twofactorauth/general/enable 0
+#               ${DEN} env exec -T php-fpm bin/magento config:set twofactorauth/general/enable 0
 
       - name: Run Magento Setup Upgrade
         working-directory: ./main

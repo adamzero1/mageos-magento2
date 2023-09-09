@@ -63,9 +63,10 @@ jobs:
         working-directory: ./main
         run: |
           export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-          ${DEN} env exec -T php-fpm echo "hello world"
-          ${DEN} env exec -T php-fpm composer -v
-          ${DEN} env exec -T php-fpm composer install
+          ${DEN} env exec -T php-fpm \
+            wget https://getcomposer.org/composer-stable.phar -O composer.phar
+            php composer.phar -v
+            php composer.phar install --no-interaction --no-progress --no-suggest --no-scripts --prefer-dist
 
       - name: Install Magento
         working-directory: ./main

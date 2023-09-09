@@ -110,8 +110,6 @@ jobs:
               --admin-email="user-email-dummy@mage-os-awesome.com" \
               --admin-firstname="Admin" \
               --admin-lastname="User"
-
-  # adsadsdas
       - name: Set All Magento Configs
         working-directory: ./main
         run: |

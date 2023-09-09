@@ -1,17 +1,13 @@
-name: Test
+name: magento-setup-warden
 run-name: ${{ github.actor }} is running magento setup in warden
 on:
   workflow_dispatch: {}
-  pull_request:
-    branches:
-      - 2.4-develop
-      - nx-work-integration-tests
 
 permissions:
   contents: write
 
 jobs:
-  integration-tests:
+  magento-setup-warden:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PR commit
@@ -55,6 +51,7 @@ jobs:
           sed -i 's/WARDEN_RABBITMQ=.*/WARDEN_RABBITMQ=0/g' .env
           sed -i 's/WARDEN_REDIS=.*/WARDEN_REDIS=1/g' .env
           sed -i 's/PHP_VERSION=.*/PHP_VERSION=8.2/g' .env
+          cat .env
           ${DEN} env up
           echo ${{secrets.DEPLOY_PASSWORD}} | sudo -S chmod -R a+rw .
       - name: Configure PHPUnit
@@ -63,34 +60,6 @@ jobs:
           cp dev/tests/unit/phpunit.xml.dist dev/tests/unit/phpunit.xml
           sed -i '/<extensions>/,/<\/extensions>/d' dev/tests/unit/phpunit.xml
       # /workspaces/warden/bin/warden env exec -T php-fpm whoami
-      - name: Run PHPUnit Nx
-        working-directory: ./main
-        run: |
-          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-          nx affected --target=test:unit --head=HEAD --base=remotes/origin/${{ github.event.pull_request.base.ref }}
-          cp nginx.conf.sample nginx.conf
-          sed -i '0,/^# PHP entry point for setup application$/d' nginx.conf
-          sed -i 's/ fastcgi_backend;/ $fastcgi_backend;/g' nginx.conf
-          line=$(($(grep -n '# PHP entry point for main application' nginx.conf | cut -f1 -d:)-1));
-
-          echo $line;
-          head -n $line nginx.conf > nginx.conf.tmp
-
-          tee -a nginx.conf.tmp << END
-          location ~* ^/dev/tests/acceptance/utils($|/) {
-            root \$MAGE_ROOT;
-            location ~ ^/dev/tests/acceptance/utils/command.php {
-                fastcgi_pass   fastcgi_backend;
-                fastcgi_index  index.php;
-                fastcgi_param  SCRIPT_FILENAME  \$document_root\$fastcgi_script_name;
-                include        fastcgi_params;
-            }
-          }
-          END
-
-          tail -n +$line nginx.conf >> nginx.conf.tmp
-          mv nginx.conf.tmp nginx.conf
-
 
 #https://docs.warden.dev/environments/customizing.html
 

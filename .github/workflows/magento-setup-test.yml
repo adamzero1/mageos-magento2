@@ -99,11 +99,11 @@ jobs:
 
 # # https://github.com/magento/magento2/issues/37236 - unable to install magento with es 8 :(
 
-      - name: Create Admin User
-        working-directory: ./main
-        run: |
-          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-          ${DEN} env exec -T php-fpm php bin/magento admin:user:create --admin-user="admin" --admin-password="abcABC123" --admin-email="user-email-dummy@mage-os-awesome.com" --admin-firstname="Admin" --admin-lastname="User"
+#      - name: Create Admin User
+#        working-directory: ./main
+#        run: |
+#          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+#          ${DEN} env exec -T php-fpm php bin/magento admin:user:create --admin-user="admin" --admin-password="abcABC123" --admin-email="user-email-dummy@mage-os-awesome.com" --admin-firstname="Admin" --admin-lastname="User"
 
       - name: Set All Magento Configs
         working-directory: ./main

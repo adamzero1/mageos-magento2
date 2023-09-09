@@ -50,6 +50,7 @@ jobs:
           sed -i 's/WARDEN_ELASTICSEARCH=.*/WARDEN_ELASTICSEARCH=1/g' .env
           sed -i 's/WARDEN_OPENSEARCH=.*/WARDEN_OPENSEARCH=0/g' .env
           sed -i 's/WARDEN_ELASTICHQ=.*/WARDEN_ELASTICHQ=0/g' .env
+          sed -i 's/COMPOSER_VERSION=.*/COMPOSER_VERSION=2/g' .env
           sed -i 's/WARDEN_VARNISH=.*/WARDEN_VARNISH=1/g' .env
           sed -i 's/WARDEN_RABBITMQ=.*/WARDEN_RABBITMQ=0/g' .env
           sed -i 's/WARDEN_REDIS=.*/WARDEN_REDIS=1/g' .env

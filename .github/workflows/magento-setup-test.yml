@@ -61,6 +61,7 @@ jobs:
       - name: Install Magento
         working-directory: ./main
         run: |
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
           ${DEN} env exec -T php-fpm bin/magento setup:install \
             --backend-frontname=admin \
             --db-host=db \
@@ -91,6 +92,7 @@ jobs:
       - name: Create Admin User
         working-directory: ./main
         run: |
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
           ${DEN} env exec -T php-fpm bin/magento admin:user:create \
             --admin-password="password123" \
             --admin-user="admin" \
@@ -102,6 +104,7 @@ jobs:
       - name: Set All Magento Configs
         working-directory: ./main
         run: |
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
           ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_adminhtml 1
           ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_frontend 1
           ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_frontend 1

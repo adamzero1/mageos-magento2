@@ -21,8 +21,6 @@ jobs:
           # Need to do this otherwise Nx cant determine diff
           fetch-depth: 0
 
-      - uses: php-actions/composer@v6
-
       # Warden / Den stuff
       #git clone https://github.com/wardenenv/warden.git /workspaces/warden
       - name: Checkout Den Repo
@@ -59,6 +57,12 @@ jobs:
           cat .env
           ${DEN} env up
           echo ${{secrets.DEPLOY_PASSWORD}} | sudo -S chmod -R a+rw .
+
+      - name: composer install run
+        working-directory: ./main
+        run: |
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          ${DEN} env exec -T php-fpm composer install
 
       - name: Install Magento
         working-directory: ./main

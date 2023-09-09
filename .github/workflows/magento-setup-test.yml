@@ -118,12 +118,37 @@ jobs:
           ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_adminhtml 1
           ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_frontend 1
           ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_frontend 1
-          ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/unsecure/base_url https://adamzero1-vigilant-space-fortnight-gj4grxvv5hwv4v-80.preview.app.github.dev/
-          ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/base_url https://adamzero1-vigilant-space-fortnight-gj4grxvv5hwv4v-80.preview.app.github.dev/
+#               We do not need outside container availability - yet
+#          ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/unsecure/base_url https://adamzero1-vigilant-space-fortnight-gj4grxvv5hwv4v-80.preview.app.github.dev/
+#          ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/base_url https://adamzero1-vigilant-space-fortnight-gj4grxvv5hwv4v-80.preview.app.github.dev/
           ${DEN} env exec -T php-fpm bin/magento config:set cms/wysiwyg/enabled disabled
           ${DEN} env exec -T php-fpm bin/magento config:set admin/security/admin_account_sharing 1
           ${DEN} env exec -T php-fpm bin/magento config:set admin/security/use_form_key 0
           ${DEN} env exec -T php-fpm bin/magento config:set web/seo/use_rewrites 1
-          ${DEN} env exec -T php-fpm bin/magento config:set twofactorauth/general/force_providers google
-          ${DEN} env exec -T php-fpm bin/magento config:set twofactorauth/google/otp_window 60
+          ${DEN} env exec -T php-fpm bin/magento config:set twofactorauth/general/enable 0
+
+      - name: Run Magento Setup Upgrade
+        working-directory: ./main
+        run: |
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
           ${DEN} env exec -T php-fpm bin/magento cache:flush
+          ${DEN} env exec -T php-fpm bin/magento setup:upgrade
+          ${DEN} env exec -T php-fpm bin/magento setup:db:status
+
+      - name: Set to production mode
+        working-directory: ./main
+        run: |
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          ${DEN} env exec -T php-fpm bin/magento deploy:mode:set production
+
+      - name: Run Magento Re-indexation
+        working-directory: ./main
+        run: |
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          ${DEN} env exec -T php-fpm bin/magento indexer:reindex
+
+      - name: Run PHP BIN/MAGENTO
+        working-directory: ./main
+        run: |
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          ${DEN} env exec -T php-fpm php bin/magento

@@ -1,6 +1,9 @@
 name: Integration Tests
 run-name: ${{ github.actor }} is running Unit Tests
 on:
+  push:
+    branches:
+      - feature/magento-setup*
   pull_request:
     branches:
       - 2.4-develop

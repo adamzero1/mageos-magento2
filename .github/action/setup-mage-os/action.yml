@@ -10,7 +10,7 @@ inputs:
 
   php_version:
     required: true
-    default: "8.2"
+    default: "8.1"
     description: "PHP version used in warden container."
 
   composer_version:

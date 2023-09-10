@@ -83,7 +83,7 @@ runs:
         sed -i 's/WARDEN_ELASTICSEARCH=.*/WARDEN_ELASTICSEARCH=1/g' .env
         sed -i 's/WARDEN_OPENSEARCH=.*/WARDEN_OPENSEARCH=0/g' .env
         sed -i 's/WARDEN_ELASTICHQ=.*/WARDEN_ELASTICHQ=0/g' .env
-        sed -i 's/COMPOSER_VERSION=.*/COMPOSER_VERSION=${{ inputs.composer_version }}/g' .env
+        sed -i 's/COMPOSER_VERSION=.*/COMPOSER_VERSION=2/g' .env
         sed -i 's/WARDEN_VARNISH=.*/WARDEN_VARNISH=${{ inputs.use_varnish }}/g' .env
         sed -i 's/WARDEN_RABBITMQ=.*/WARDEN_RABBITMQ=${{ inputs.use_rabbitmq }}/g' .env
         sed -i 's/WARDEN_REDIS=.*/WARDEN_REDIS=${{ inputs.use_redis }}/g' .env
@@ -95,9 +95,10 @@ runs:
       working-directory: ./main
       shell: bash
       run: |
+        wget https://getcomposer.org/download/${{ inputs.composer_version }}/composer.phar -O composer.phar
         export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
         ${DEN} env exec -T php-fpm \
-          composer install --no-interaction --no-progress --prefer-dist
+            php composer.phar -v && php composer.phar install --no-interaction --no-progress --prefer-dist
 
     - name: Install Magento
       working-directory: ./main

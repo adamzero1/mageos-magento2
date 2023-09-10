@@ -1,7 +1,7 @@
 name: magento-setup-warden
 run-name: ${{ github.actor }} is running magento setup in warden
 on:
-  workflow_dispatch: { }
+  workflow_dispatch: {}
   push:
     branches:
       - feature/magento-setup*
@@ -34,12 +34,13 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Init / Configure Den
+        id: den
         working-directory: ./main
         run: |
-          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          echo "DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden" >> $GITHUB_ENV
           rm .env
-          ${DEN} svc up
-          ${DEN} env-init mageos magento2
+          ${{ env.DEN }} svc up
+          ${{ env.DEN }} env-init mageos magento2
           sed -i 's/WARDEN_DB=.*/WARDEN_DB=1/g' .env
           sed -i 's/WARDEN_TEST_DB=.*/WARDEN_TEST_DB=0/g' .env
           sed -i 's/MYSQL_DISTRIBUTION=.*/DB_DISTRIBUTION=mariadb/g' .env
@@ -53,14 +54,13 @@ jobs:
           sed -i 's/WARDEN_REDIS=.*/WARDEN_REDIS=1/g' .env
           sed -i 's/PHP_VERSION=.*/PHP_VERSION=8.2/g' .env
           cat .env
-          ${DEN} env up
+          ${{ env.DEN }} env up
           echo ${{secrets.DEPLOY_PASSWORD}} | sudo -S chmod -R a+rw .
 
       - name: composer install run
         working-directory: ./main
         run: |
-          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-          ${DEN} env exec -T php-fpm \
+          ${{ env.DEN }} env exec -T php-fpm \
             wget https://getcomposer.org/composer-stable.phar -O composer.phar
             php composer.phar -v
             php composer.phar install --no-interaction --no-progress --no-suggest --no-scripts --prefer-dist
@@ -68,8 +68,7 @@ jobs:
       - name: Install Magento
         working-directory: ./main
         run: |
-          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-          ${DEN} env exec -T php-fpm bin/magento setup:install \
+          ${{ env.DEN }} env exec -T php-fpm bin/magento setup:install \
             --backend-frontname=admin \
             --db-host=db \
             --db-name=magento \
@@ -97,8 +96,7 @@ jobs:
       - name: Create Admin User
         working-directory: ./main
         run: |
-          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-          ${DEN} env exec -T php-fpm php bin/magento admin:user:create \
+          ${{ env.DEN }} env exec -T php-fpm php bin/magento admin:user:create \
           --admin-user=admin \
           --admin-password=abcABC123 \
           --admin-email=user-email-dummy@mage-os-awesome.com \
@@ -116,7 +114,6 @@ jobs:
                ${DEN} env exec -T php-fpm bin/magento config:set admin/security/admin_account_sharing 1
                ${DEN} env exec -T php-fpm bin/magento config:set admin/security/use_form_key 0
                ${DEN} env exec -T php-fpm bin/magento config:set web/seo/use_rewrites 1
-#               ${DEN} env exec -T php-fpm bin/magento config:set twofactorauth/general/enable 0
 
       - name: Run Magento Setup Upgrade
         working-directory: ./main

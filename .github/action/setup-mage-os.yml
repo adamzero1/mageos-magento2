@@ -1,0 +1,186 @@
+name: "Setup Mage-OS in Warden"
+author: "Vladyslav Podorozhnyi"
+description: "A Github Action that pull and set-up Magen-OS in warden env."
+
+inputs:
+  warden_version:
+    required: true
+    default: "0.14.1"
+    description: "The version of warden to use."
+
+  php_version:
+    required: true
+    default: "8.2"
+    description: "PHP version used in warden container."
+
+  composer_version:
+    required: true
+    default: "2.5.5"
+    description: "The version of composer to use."
+
+  database_version:
+    required: true
+    default: "10.6"
+    description: "The version of the database to use."
+
+  database_distribution:
+    required: true
+    default: "mariadb"
+    description: "The distribution of the database to use."
+
+  search_type:
+    required: true
+    default: "elasticsearch7"
+    description: "The search engine to use."
+
+  elasticsearch_version:
+    required: true
+    default: "7.15.1"
+    description: "The version of the search engine to use."
+
+  opensearch_version:
+    required: true
+    default: "1.0.0"
+    description: "The version of the search engine to use."
+
+  use_varnish:
+    required: true
+    default: "1"
+    description: "Whether to use varnish or not."
+
+  use_rabbitmq:
+    required: true
+    default: "0"
+    description: "Whether to use rabbitmq or not."
+
+  use_redis:
+    required: true
+    default: "1"
+    description: "Whether to use redis or not."
+
+runs:
+  runs-on: ubuntu-latest
+  steps:
+    - name: Checkout Den Repo
+      uses: actions/checkout@v3
+      with:
+        repository: wardenenv/warden
+        path: warden
+        ref: refs/tags/v${{ inputs.warden_version }}
+
+    - name: Docker Login
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Init / Configure Den
+      working-directory: ./main
+      run: |
+        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+        rm .env
+        ${DEN} svc up
+        ${DEN} env-init mageos magento2
+        sed -i 's/WARDEN_DB=.*/WARDEN_DB=1/g' .env
+        sed -i 's/WARDEN_TEST_DB=.*/WARDEN_TEST_DB=0/g' .env
+        sed -i 's/MYSQL_DISTRIBUTION=.*/DB_DISTRIBUTION=${{ inputs.database_distribution }}/g' .env
+        sed -i 's/MYSQL_DISTRIBUTION_VERSION=.*/DB_DISTRIBUTION_VERSION=${{ inputs.database_version }}/g' .env
+        sed -i 's/WARDEN_ELASTICSEARCH=.*/WARDEN_ELASTICSEARCH=1/g' .env
+        sed -i 's/WARDEN_OPENSEARCH=.*/WARDEN_OPENSEARCH=0/g' .env
+        sed -i 's/WARDEN_ELASTICHQ=.*/WARDEN_ELASTICHQ=0/g' .env
+        sed -i 's/COMPOSER_VERSION=.*/COMPOSER_VERSION=${{ inputs.composer_version }}/g' .env
+        sed -i 's/WARDEN_VARNISH=.*/WARDEN_VARNISH=${{ inputs.use_varnish }}/g' .env
+        sed -i 's/WARDEN_RABBITMQ=.*/WARDEN_RABBITMQ=${{ inputs.use_rabbitmq }}/g' .env
+        sed -i 's/WARDEN_REDIS=.*/WARDEN_REDIS=${{ inputs.use_redis }}/g' .env
+        sed -i 's/PHP_VERSION=.*/PHP_VERSION=${{ inputs.php_version }}/g' .env
+        cat .env
+        ${DEN} env up
+        echo ${{secrets.DEPLOY_PASSWORD}} | sudo -S chmod -R a+rw .
+
+    - name: composer install run
+      working-directory: ./main
+      run: |
+        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+        ${DEN} env exec -T php-fpm \
+          wget https://getcomposer.org/download/${{ inputs.composer_version }}/composer.phar -O composer.phar
+          php composer.phar -v
+          php composer.phar install --no-interaction --no-progress --no-suggest --no-scripts --prefer-dist
+
+    - name: Install Magento
+      working-directory: ./main
+      run: |
+        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+        ${DEN} env exec -T php-fpm bin/magento setup:install \
+          --backend-frontname=admin \
+          --db-host=db \
+          --db-name=magento \
+          --db-user=magento \
+          --db-password=magento \
+          --http-cache-hosts=varnish:80 \
+          --session-save=redis \
+          --session-save-redis-host=redis \
+          --session-save-redis-port=6379 \
+          --session-save-redis-db=2 \
+          --cache-backend=redis \
+          --cache-backend-redis-server=redis \
+          --cache-backend-redis-db=0 \
+          --cache-backend-redis-port=6379 \
+          --page-cache=redis \
+          --page-cache-redis-server=redis \
+          --page-cache-redis-db=1 \
+          --page-cache-redis-port=6379 \
+          --search-engine=${{ inputs.search_type }} \
+          --elasticsearch-host=elasticsearch \
+          --elasticsearch-port=9200 \
+          --elasticsearch-enable-auth=0 \
+          --elasticsearch-index-prefix=magento2
+
+    - name: Create Admin User
+      working-directory: ./main
+      run: |
+        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+        ${DEN} env exec -T php-fpm php bin/magento admin:user:create \
+        --admin-user=admin \
+        --admin-password=abcABC123 \
+        --admin-email=user-email-dummy@mage-os-awesome.com \
+        --admin-firstname=Admin \
+        --admin-lastname=User
+
+    - name: Set All Magento Configs
+      working-directory: ./main
+      run: |
+        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+        ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_adminhtml 1
+        ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_frontend 1
+        ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_frontend 1
+        ${DEN} env exec -T php-fpm bin/magento config:set cms/wysiwyg/enabled disabled
+        ${DEN} env exec -T php-fpm bin/magento config:set admin/security/admin_account_sharing 1
+        ${DEN} env exec -T php-fpm bin/magento config:set admin/security/use_form_key 0
+        ${DEN} env exec -T php-fpm bin/magento config:set web/seo/use_rewrites 1
+    #               ${DEN} env exec -T php-fpm bin/magento config:set twofactorauth/general/enable 0
+
+    - name: Run Magento Setup Upgrade
+      working-directory: ./main
+      run: |
+        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+        ${DEN} env exec -T php-fpm bin/magento cache:flush
+        ${DEN} env exec -T php-fpm bin/magento setup:upgrade
+        ${DEN} env exec -T php-fpm bin/magento setup:db:status
+
+    - name: Set to production mode
+      working-directory: ./main
+      run: |
+        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+        ${DEN} env exec -T php-fpm bin/magento deploy:mode:set production
+
+    - name: Run Magento Re-indexation
+      working-directory: ./main
+      run: |
+        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+        ${DEN} env exec -T php-fpm bin/magento indexer:reindex
+
+    - name: Run PHP BIN/MAGENTO
+      working-directory: ./main
+      run: |
+        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+        ${DEN} env exec -T php-fpm php bin/magento

@@ -96,7 +96,7 @@ runs:
       shell: bash
       run: |
         export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-        ${DEN} env exec -T php-fpm sudo chmod -R u+rw .
+        ${DEN} env exec -T php-fpm sudo chmod -R 777 .
 
     - name: composer install run
       working-directory: ./main

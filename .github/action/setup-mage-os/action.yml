@@ -97,7 +97,6 @@ runs:
         php_version: ${{ inputs.php_version }}
         version: ${{ inputs.composer_version }}
         args: "--optimize-autoloader"
-        working_dir: "main"
 
     - name: Install Magento
       working-directory: ./main

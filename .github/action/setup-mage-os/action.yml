@@ -93,9 +93,9 @@ runs:
 
     - name: Change Directory Permissions
       working-directory: ./main
+      shell: bash
       run: |
-        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-        ${DEN} env exec -T php-fpm chmod -R u+rw .
+        chmod -R u+rw .
 
     - name: composer install run
       working-directory: ./main

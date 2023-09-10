@@ -98,8 +98,9 @@ runs:
         export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
         ${DEN} env exec -T php-fpm \
           wget https://getcomposer.org/download/${{ inputs.composer_version }}/composer.phar -O composer.phar
+          chmod 755 composer.phar
           php composer.phar -v
-          php composer.phar install --no-interaction --no-progress --no-suggest --no-scripts --prefer-dist
+          php composer.phar install --no-interaction --no-progress --no-suggest
 
     - name: Install Magento
       working-directory: ./main

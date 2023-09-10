@@ -59,7 +59,6 @@ inputs:
     description: "Whether to use redis or not."
 
 runs:
-  runs-on: ubuntu-latest
   steps:
     - name: Checkout Den Repo
       uses: actions/checkout@v3

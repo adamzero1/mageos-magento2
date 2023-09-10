@@ -142,6 +142,9 @@ jobs:
         run: |
           npm run generate-workspace
 
+    ## TODO: this one leads to errors in the nx command, need to figure out why:
+    ## Error: fatal: Not a valid object name remotes/origin/
+    #                fatal: No such ref: 'remotes/origin/'
       - name: Print Affected
         working-directory: ./main
         run: |
@@ -252,5 +255,16 @@ jobs:
           cat ${AFFECTED_OUTPUT}
           echo "Affected Projects: $(jq .projects ${AFFECTED_OUTPUT})"
 
+      ## TODO: integrate matrix values as input for versions / tools to use while Mage-OS setup
+      ## values to DB distribution, search type [elastic or opensearch] still needs to be added.
       - name: Setup Mage-OS
         uses: ./main/.github/action/setup-mage-os
+        with:
+          php_version: ${{ matrix.php_version }}
+          database_version: ${{ matrix.database_version }}
+          search_version: ${{ matrix.search_version }}
+          message_queue_version: ${{ matrix.message_queue_version }}
+          cache_version: ${{ matrix.cache_version }}
+          http_cache_version: ${{ matrix.http_cache_version }}
+
+       ## TODO: runa actual integration tests here for affected files

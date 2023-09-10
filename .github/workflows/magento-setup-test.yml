@@ -21,4 +21,4 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Mage-OS
-        uses: ./.github/action/setup-mage-os
+        uses: ./main/.github/action/setup-mage-os

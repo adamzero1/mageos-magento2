@@ -66,7 +66,7 @@ runs:
       with:
         repository: wardenenv/warden
         path: warden
-        ref: refs/tags/v${{ inputs.warden_version }}
+        ref: refs/tags/${{ inputs.warden_version }}
 
     - name: Init / Configure Den
       working-directory: ./main

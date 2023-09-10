@@ -2,9 +2,9 @@ name: magento-setup-warden
 run-name: ${{ github.actor }} is running magento setup in warden
 on:
   workflow_dispatch: { }
-  push:
-    branches:
-      - feature/magento-setup*
+#  push:
+#    branches:
+#      - feature/magento-setup*
 
 permissions:
   contents: write

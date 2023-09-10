@@ -96,7 +96,7 @@ runs:
       shell: bash
       run: |
         ${DEN} env exec -T php-fpm \
-          composer install --no-interaction --no-progress --preffer-dist
+          composer install --no-interaction --no-progress --prefer-dist
 
     - name: Install Magento
       working-directory: ./main

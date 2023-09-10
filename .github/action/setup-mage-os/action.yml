@@ -59,6 +59,7 @@ inputs:
     description: "Whether to use redis or not."
 
 runs:
+  using: composite
   steps:
     - name: Checkout Den Repo
       uses: actions/checkout@v3

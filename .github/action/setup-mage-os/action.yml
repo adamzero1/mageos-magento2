@@ -95,10 +95,8 @@ runs:
       working-directory: ./main
       shell: bash
       run: |
-        wget https://getcomposer.org/download/2.5.5/composer.phar -O composer.phar
-        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
         ${DEN} env exec -T php-fpm \
-          php composer.phar -v && php composer.phar install --no-interaction --no-progress --no-suggest
+          composer install --no-interaction --no-progress --preffer-dist
 
     - name: Install Magento
       working-directory: ./main

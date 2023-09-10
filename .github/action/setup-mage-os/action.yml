@@ -91,6 +91,11 @@ runs:
         cat .env
         ${DEN} env up
 
+    - name: Change Directory Permissions
+      working-directory: ./main
+      run: |
+        chmod -R u+rw .
+
     - name: composer install run
       working-directory: ./main
       shell: bash

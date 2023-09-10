@@ -69,6 +69,7 @@ runs:
 
     - name: Init / Configure Den
       working-directory: ./main
+      shell: bash
       run: |
         export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
         rm .env
@@ -91,6 +92,7 @@ runs:
 
     - name: composer install run
       working-directory: ./main
+      shell: bash
       run: |
         export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
         ${DEN} env exec -T php-fpm \
@@ -100,6 +102,7 @@ runs:
 
     - name: Install Magento
       working-directory: ./main
+      shell: bash
       run: |
         export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
         ${DEN} env exec -T php-fpm bin/magento setup:install \
@@ -129,6 +132,7 @@ runs:
 
     - name: Create Admin User
       working-directory: ./main
+      shell: bash
       run: |
         export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
         ${DEN} env exec -T php-fpm php bin/magento admin:user:create \
@@ -140,6 +144,7 @@ runs:
 
     - name: Set All Magento Configs
       working-directory: ./main
+      shell: bash
       run: |
         export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
         ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_adminhtml 1
@@ -153,6 +158,7 @@ runs:
 
     - name: Run Magento Setup Upgrade
       working-directory: ./main
+      shell: bash
       run: |
         export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
         ${DEN} env exec -T php-fpm bin/magento cache:flush
@@ -161,18 +167,21 @@ runs:
 
     - name: Set to production mode
       working-directory: ./main
+      shell: bash
       run: |
         export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
         ${DEN} env exec -T php-fpm bin/magento deploy:mode:set production
 
     - name: Run Magento Re-indexation
       working-directory: ./main
+      shell: bash
       run: |
         export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
         ${DEN} env exec -T php-fpm bin/magento indexer:reindex
 
     - name: Run PHP BIN/MAGENTO
       working-directory: ./main
+      shell: bash
       run: |
         export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
         ${DEN} env exec -T php-fpm php bin/magento

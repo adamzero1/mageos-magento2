@@ -1,0 +1,100 @@
+name: "Integration Tests Mage-OS in Warden"
+author: "Vladyslav Podorozhnyi"
+description: "A Github Action that run Integration Tests of Mage-OS in warden."
+
+## TODO: use inputs as list of tests to be executed
+
+inputs:
+  search:
+    required: true
+    default: "elasticsearch:7.15.1"
+    description: "The search engine to use."
+
+  rabbitmq:
+    required: true
+    default: "rabbitmq:3.9"
+    description: "Rabbit MQ version to use."
+
+  redis:
+    required: true
+    default: "redis:7.0"
+    description: "Redis version to use."
+
+  run_memory_test:
+    required: true
+    default: "0"
+    description: "Run Memory Test."
+
+  run_magento_integration_tests:
+    required: true
+    default: "1"
+    description: "Run Magento Integration Tests."
+
+  run_magento_integration_tests_real_suite:
+    required: true
+    default: "1"
+    description: "Run Magento Integration Tests Real Suite."
+
+runs:
+  using: composite
+  steps:
+
+    - name: Prepare config for Integration tests
+      working-directory: ./main
+      shell: bash
+      env:
+        SEARCH: ${{ inputs.search }}
+        RABBITMQ: ${{ inputs.rabbitmq }}
+        REDIS: ${{ inputs.redis }}
+      run: |
+        bash build_scripts/build_integration_tests_config.sh "$SEARCH" "$RABBITMQ" "$REDIS" > dev/tests/integration/etc/install-config-mysql.php
+        echo "Debug integration tests config:"
+        cat dev/tests/integration/etc/install-config-mysql.php
+
+    - name: Run Memory Test
+      if: ${{ inputs.run_memory_test == 1 }}
+      working-directory: ./main
+      shell: bash
+      run: |
+        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+        ${DEN} env exec -T php-fpm /bin/bash -c "cd ./dev/tests/integration
+          echo -e '\033[32mRun Memory Tests\033[0m'
+          php ../../../vendor/bin/phpunit
+            --configuration phpunit.xml.dist
+            --coverage-clover=coverage.xml
+            --log-junit=test-results.xml
+            --coverage-html=coverage
+            --testsuite 'Memory Usage Tests'
+        "
+
+    - name: Run Magento Integration Tests
+      if: ${{ inputs.run_magento_integration_tests == 1 }}
+      working-directory: ./main
+      shell: bash
+      run: |
+        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+        ${DEN} env exec -T php-fpm /bin/bash -c "cd ./dev/tests/integration
+          echo -e '\033[32mRun Magento Integration Tests\033[0m'
+          php ../../../vendor/bin/phpunit
+              --configuration phpunit.xml.dist
+              --coverage-clover=coverage.xml
+              --log-junit=test-results.xml
+              --coverage-html=coverage
+              --testsuite 'Magento Integration Tests'
+        "
+
+    - name: Run Magento Integration Tests Real Suite
+      if: ${{ inputs.run_magento_integration_tests_real_suite == 1 }}
+      working-directory: ./main
+      shell: bash
+      run: |
+        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+        ${DEN} env exec -T php-fpm /bin/bash -c "cd ./dev/tests/integration
+              echo -e '\033[32mRun Magento Integration Tests Real Suite\033[0m'
+              php ../../../vendor/bin/phpunit
+              --configuration phpunit.xml.dist
+              --coverage-clover=coverage.xml
+              --log-junit=test-results.xml
+              --coverage-html=coverage
+              --testsuite 'Magento Integration Tests Real Suite'
+        "

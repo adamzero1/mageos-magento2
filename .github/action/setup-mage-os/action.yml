@@ -18,45 +18,60 @@ inputs:
     default: "2.3.0"
     description: "The version of composer to use."
 
-  database_version:
+  database:
     required: true
-    default: "10.6"
-    description: "The version of the database to use."
+    default: "mariadb:10.6"
+    description: "The distribution : version of the database to use."
 
-  database_distribution:
+  search:
     required: true
-    default: "mariadb"
-    description: "The distribution of the database to use."
-
-  search_type:
-    required: true
-    default: "elasticsearch7"
+    default: "elasticsearch:7.15.1"
     description: "The search engine to use."
 
-  elasticsearch_version:
+  varnish:
     required: true
-    default: "7.15.1"
-    description: "The version of the search engine to use."
+    default: "varnish:7.1"
+    description: "Varnish version to use."
 
-  opensearch_version:
+  rabbitmq:
     required: true
-    default: "1.0.0"
-    description: "The version of the search engine to use."
+    default: "rabbitmq:3.9"
+    description: "Rabbit MQ version to use."
 
-  use_varnish:
+  redis:
     required: true
-    default: "1"
-    description: "Whether to use varnish or not."
+    default: "redis:7.0"
+    description: "Redis version to use."
 
-  use_rabbitmq:
+  run_setup_install:
     required: true
     default: "0"
-    description: "Whether to use rabbitmq or not."
+    description: "Whether to run setup:install or not."
 
-  use_redis:
+  run_setup_upgrade:
     required: true
-    default: "1"
-    description: "Whether to use redis or not."
+    default: "0"
+    description: "Whether to run setup:upgrade or not."
+
+  run_reindex:
+    required: true
+    default: "0"
+    description: "Whether to run indexer:reindex or not."
+
+  run_production_deploy_mode:
+    required: true
+    default: "0"
+    description: "Whether to run deploy:mode:set production or not."
+
+  run_magento_config_preset:
+    required: true
+    default: "0"
+    description: "Whether to run magento config preset or not."
+
+  run_admin_user_creation:
+    required: true
+    default: "0"
+    description: "Whether to run admin user creation or not."
 
 runs:
   using: composite
@@ -68,28 +83,27 @@ runs:
         path: warden
         ref: refs/tags/${{ inputs.warden_version }}
 
-    - name: Init / Configure Den
+    - name: Init / Configure Warden
+      working-directory: ./main
+      shell: bash
+      env:
+        PHP_VERSION: ${{ inputs.php_version }}
+        COMPOSER_VERSION: ${{ inputs.composer_version }}
+        DATABASE: ${{ inputs.database }}
+        SEARCH: ${{ inputs.search }}
+        VARNISH: ${{ inputs.varnish }}
+        RABBITMQ: ${{ inputs.rabbitmq }}
+        REDIS: ${{ inputs.redis }}
+      run: |
+        bash build_scripts/generate_warden_env.sh  "$PHP_VERSION" "$COMPOSER_VERSION" "$DATABASE" "$SEARCH" "$VARNISH" "$RABBITMQ" "$REDIS" > .env
+        echo "DEBUG .env\n" && cat .env
+
+    - name: Warden svc up && Warden env up
       working-directory: ./main
       shell: bash
       run: |
-        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-        rm .env
-        ${DEN} svc up
-        ${DEN} env-init mageos magento2
-        sed -i 's/WARDEN_DB=.*/WARDEN_DB=1/g' .env
-        sed -i 's/WARDEN_TEST_DB=.*/WARDEN_TEST_DB=0/g' .env
-        sed -i 's/MYSQL_DISTRIBUTION=.*/DB_DISTRIBUTION=${{ inputs.database_distribution }}/g' .env
-        sed -i 's/MYSQL_DISTRIBUTION_VERSION=.*/DB_DISTRIBUTION_VERSION=${{ inputs.database_version }}/g' .env
-        sed -i 's/WARDEN_ELASTICSEARCH=.*/WARDEN_ELASTICSEARCH=1/g' .env
-        sed -i 's/WARDEN_OPENSEARCH=.*/WARDEN_OPENSEARCH=0/g' .env
-        sed -i 's/WARDEN_ELASTICHQ=.*/WARDEN_ELASTICHQ=0/g' .env
-        sed -i 's/COMPOSER_VERSION=.*/COMPOSER_VERSION=2/g' .env
-        sed -i 's/WARDEN_VARNISH=.*/WARDEN_VARNISH=${{ inputs.use_varnish }}/g' .env
-        sed -i 's/WARDEN_RABBITMQ=.*/WARDEN_RABBITMQ=${{ inputs.use_rabbitmq }}/g' .env
-        sed -i 's/WARDEN_REDIS=.*/WARDEN_REDIS=${{ inputs.use_redis }}/g' .env
-        sed -i 's/PHP_VERSION=.*/PHP_VERSION=${{ inputs.php_version }}/g' .env
-        cat .env
-        ${DEN} env up
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          ${DEN} svc up 1>/dev/null 2>&1 && ${DEN} env up 1>/dev/null 2>&1
 
     - name: Change Directory Permissions
       working-directory: ./main
@@ -103,93 +117,103 @@ runs:
       shell: bash
       run: |
         export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-        wget https://getcomposer.org/download/${{ inputs.composer_version }}/composer.phar -O composer.phar && chmod +x composer.phar
+        wget https://getcomposer.org/download/${{ inputs.composer_version }}/composer.phar -O composer.phar 1>/dev/null 2>&1 && chmod +x composer.phar
         ${DEN} env exec -T php-fpm ls -la | grep composer
         ${DEN} env exec -T php-fpm php composer.phar -v
-        ${DEN} env exec -T php-fpm php composer.phar install --no-interaction --no-progress --no-scripts --prefer-dist
+        ${DEN} env exec -T php-fpm php composer.phar install --no-interaction --no-progress
 
     - name: Install Magento
       working-directory: ./main
       shell: bash
+      env:
+        SEARCH: ${{ inputs.search }}
+        REDIS: ${{ inputs.redis }}
+        RABBITMQ: ${{ inputs.rabbitmq }}
+        VARNISH: ${{ inputs.varnish }}
+        RUN_SETUP_INSTALL: ${{ inputs.run_setup_install }}
+        DEN: /home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
       run: |
-        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-        ${DEN} env exec -T php-fpm bin/magento setup:install \
-          --backend-frontname=admin \
-          --db-host=db \
-          --db-name=magento \
-          --db-user=magento \
-          --db-password=magento \
-          --http-cache-hosts=varnish:80 \
-          --session-save=redis \
-          --session-save-redis-host=redis \
-          --session-save-redis-port=6379 \
-          --session-save-redis-db=2 \
-          --cache-backend=redis \
-          --cache-backend-redis-server=redis \
-          --cache-backend-redis-db=0 \
-          --cache-backend-redis-port=6379 \
-          --page-cache=redis \
-          --page-cache-redis-server=redis \
-          --page-cache-redis-db=1 \
-          --page-cache-redis-port=6379 \
-          --search-engine=${{ inputs.search_type }} \
-          --elasticsearch-host=elasticsearch \
-          --elasticsearch-port=9200 \
-          --elasticsearch-enable-auth=0 \
-          --elasticsearch-index-prefix=magento2
+        if [ $RUN_SETUP_INSTALL == "1" ]; then
+          bash build_scripts/run_setup_install.sh "$SEARCH" "$REDIS" "$VARNISH" "$RABBITMQ" "$DEN"
+        else
+          echo "Skipping setup:install"
+        fi
 
     - name: Create Admin User
       working-directory: ./main
       shell: bash
       run: |
-        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-        ${DEN} env exec -T php-fpm php bin/magento admin:user:create \
-        --admin-user=admin \
-        --admin-password=abcABC123 \
-        --admin-email=user-email-dummy@mage-os-awesome.com \
-        --admin-firstname=Admin \
-        --admin-lastname=User
+        if [ ${{ inputs.run_admin_user_creation }} == "1" ]; then
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          ${DEN} env exec -T php-fpm php bin/magento admin:user:create \
+          --admin-user=admin \
+          --admin-password=abcABC123 \
+          --admin-email=user-email-dummy@mage-os-awesome.com \
+          --admin-firstname=Admin \
+          --admin-lastname=User
+        else
+            echo "Skipping admin user creation"
+        fi
 
     - name: Set All Magento Configs
       working-directory: ./main
       shell: bash
       run: |
-        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-        ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_adminhtml 1
-        ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_frontend 1
-        ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_frontend 1
-        ${DEN} env exec -T php-fpm bin/magento config:set cms/wysiwyg/enabled disabled
-        ${DEN} env exec -T php-fpm bin/magento config:set admin/security/admin_account_sharing 1
-        ${DEN} env exec -T php-fpm bin/magento config:set admin/security/use_form_key 0
-        ${DEN} env exec -T php-fpm bin/magento config:set web/seo/use_rewrites 1
-    #               ${DEN} env exec -T php-fpm bin/magento config:set twofactorauth/general/enable 0
+        if [ ${{ inputs.run_magento_config_preset }} == "1" ]; then
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_adminhtml 1
+          ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_frontend 1
+          ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_frontend 1
+          ${DEN} env exec -T php-fpm bin/magento config:set cms/wysiwyg/enabled disabled
+          ${DEN} env exec -T php-fpm bin/magento config:set admin/security/admin_account_sharing 1
+          ${DEN} env exec -T php-fpm bin/magento config:set admin/security/use_form_key 0
+          ${DEN} env exec -T php-fpm bin/magento config:set web/seo/use_rewrites 1
+        else
+          echo "Skipping magento config preset"
+        fi
 
     - name: Run Magento Setup Upgrade
       working-directory: ./main
       shell: bash
       run: |
-        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-        ${DEN} env exec -T php-fpm bin/magento cache:flush
-        ${DEN} env exec -T php-fpm bin/magento setup:upgrade
-        ${DEN} env exec -T php-fpm bin/magento setup:db:status
+        if [ ${{ inputs.run_setup_upgrade }} == "1" ]; then
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          ${DEN} env exec -T php-fpm bin/magento cache:flush
+          ${DEN} env exec -T php-fpm bin/magento setup:upgrade
+          ${DEN} env exec -T php-fpm bin/magento setup:db:status
+        else
+          echo "Skipping setup:upgrade"
+        fi
 
     - name: Set to production mode
       working-directory: ./main
       shell: bash
       run: |
-        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-        ${DEN} env exec -T php-fpm bin/magento deploy:mode:set production
+        if [ ${{ inputs.run_production_deploy_mode }} == "1" ]; then
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          ${DEN} env exec -T php-fpm bin/magento deploy:mode:set production
+        else
+          echo "Skipping deploy:mode:set production"
+        fi
 
     - name: Run Magento Re-indexation
       working-directory: ./main
       shell: bash
       run: |
-        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-        ${DEN} env exec -T php-fpm bin/magento indexer:reindex
+        if [ ${{ inputs.run_reindex }} == "1" ]; then
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          ${DEN} env exec -T php-fpm bin/magento indexer:reindex
+        else
+          echo "Skipping indexer:reindex"
+        fi
 
     - name: Run PHP BIN/MAGENTO
       working-directory: ./main
       shell: bash
       run: |
-        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-        ${DEN} env exec -T php-fpm php bin/magento
+        if [ ${{ inputs.run_setup_install }} == "1" ]; then
+          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          ${DEN} env exec -T php-fpm php bin/magento
+        else
+          echo "Skipping php bin/magento test command"
+        fi

@@ -73,6 +73,7 @@ jobs:
       # composer install always runs, but think this should be in another action
       - id: get-composer-and-php-version
         name: Get Composer & PHP Version
+        working-directory: ./main
         run: |
           echo "php_version=$(jq -c .services.php[0] supported-services.json)" >> "$GITHUB_OUTPUT"
           echo "composer_version=$(jq -c .services.composer[0] supported-services.json)" >> "$GITHUB_OUTPUT"

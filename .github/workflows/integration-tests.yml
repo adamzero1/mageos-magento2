@@ -1,10 +1,14 @@
 name: Integration Tests
 run-name: ${{ github.actor }} is running Unit Tests
 on:
+  push:
+    branches:
+      - feature/magento-setup*
   pull_request:
     branches:
       - 2.4-develop
       - nx-integration-tests
+#      - feature/magento-setup*
 
 permissions:
   contents: write
@@ -42,7 +46,7 @@ jobs:
           echo "message_queue Versions: ${{ steps.set-matrix.outputs.message_queue_versions }}"
           echo "cache Versions: ${{ steps.set-matrix.outputs.cache_versions }}"
           echo "http_cache Versions: ${{ steps.set-matrix.outputs.http_cache_versions }}"
-  
+
   nx-diff-calculator:
     runs-on: ubuntu-latest
     steps:
@@ -122,15 +126,15 @@ jobs:
             ./main/nx.json
             ./main/workspace.json
           key: nx-docker-wrapper-${{ github.event.pull_request.head.sha }}
-      
+
       - name: Copy in NX files
         working-directory: ./main
         run: |
           NXDIR="../nx"
-          cp -r ${NXDIR}/nx ./ 
-          cp ${NXDIR}/nx.json ./ 
-          cp ${NXDIR}/package.json ./ 
-          cp ${NXDIR}/package-lock.json ./ 
+          cp -r ${NXDIR}/nx ./
+          cp ${NXDIR}/nx.json ./
+          cp ${NXDIR}/package.json ./
+          cp ${NXDIR}/package-lock.json ./
 
       - name: NPM Cache
         id: npm-cache
@@ -148,12 +152,15 @@ jobs:
         working-directory: ./main
         run: |
           npm ci
-      
+
       - name: Generate Nx Workspace
         working-directory: ./main
         run: |
           npm run generate-workspace
 
+    ## TODO: this one leads to errors in the nx command, need to figure out why:
+    ## Error: fatal: Not a valid object name remotes/origin/
+    #                fatal: No such ref: 'remotes/origin/'
       - name: Print Affected
         working-directory: ./main
         run: |
@@ -216,3 +223,17 @@ jobs:
           nx print-affected --head=HEAD --base=remotes/origin/${{ github.event.pull_request.base.ref }} > ${AFFECTED_OUTPUT}
           cat ${AFFECTED_OUTPUT}
           echo "Affected Projects: $(jq .projects ${AFFECTED_OUTPUT})"
+
+      ## TODO: integrate matrix values as input for versions / tools to use while Mage-OS setup
+      ## values to DB distribution, search type [elastic or opensearch] still needs to be added.
+      - name: Setup Mage-OS
+        uses: ./main/.github/action/setup-mage-os
+        with:
+          php_version: ${{ matrix.php_version }}
+          database_version: ${{ matrix.database_version }}
+          search_version: ${{ matrix.search_version }}
+          message_queue_version: ${{ matrix.message_queue_version }}
+          cache_version: ${{ matrix.cache_version }}
+          http_cache_version: ${{ matrix.http_cache_version }}
+
+       ## TODO: runa actual integration tests here for affected files

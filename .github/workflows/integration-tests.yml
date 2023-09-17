@@ -81,7 +81,8 @@ jobs:
       - name: Composer Install
         uses: php-actions/composer@v6
         with:
-          version: ${{ steps.get-composer-and-php-version.outputs.composer_version }}
+          #version: ${{ steps.get-composer-and-php-version.outputs.composer_version }}
+          version: 2.2
           php_version: ${{ steps.get-composer-and-php-version.outputs.php_version }}
           args: "--ignore-platform-reqs --optimize-autoloader"
           working_dir: main

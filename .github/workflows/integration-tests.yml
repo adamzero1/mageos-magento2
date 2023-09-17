@@ -38,6 +38,7 @@ jobs:
           echo "message_queue_versions=$(jq -c .services.message_queue supported-services.json)" >> "$GITHUB_OUTPUT"
           echo "cache_versions=$(jq -c .services.cache supported-services.json)" >> "$GITHUB_OUTPUT"
           echo "http_cache_versions=$(jq -c .services.http_cache supported-services.json)" >> "$GITHUB_OUTPUT"
+
       - name: Debug output
         run: |
           echo "PHP Versions: ${{ steps.set-matrix.outputs.php_versions }}"
@@ -68,38 +69,21 @@ jobs:
           path: /tmp/composer-cache
           key: ${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
 
-      - name: Install Composer
+      # should probably iterate over all possible versions of composer and php declared, to ensure
+      # composer install always runs, but think this should be in another action
+      - id: get-composer-and-php-version
+        name: Get Composer & PHP Version
+        run: |
+          echo "php_version=$(jq -c .services.php[0] supported-services.json)" >> "$GITHUB_OUTPUT"
+          echo "composer_version=$(jq -c .services.composer[0] supported-services.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Composer Install
         uses: php-actions/composer@v6
         with:
-          version: 2.x
-          php_version: 8.2
+          version: ${{ steps.get-composer-and-php-version.outputs.composer_version }}
+          php_version: ${{ steps.get-composer-and-php-version.outputs.php_version }}
           args: "--ignore-platform-reqs --optimize-autoloader"
           working_dir: main
-
-      # - name: Get Composer Cache Directory
-      #   id: composer-cache
-      #   working-directory: ./main
-      #   run: echo "composer_cache_dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
-      # - name: Install Composer Cache
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ${{ steps.composer-cache.outputs.composer_cache_dir }}
-      #     key: ${{ runner.os }}-composer-${{ hashFiles('**/main/composer.lock') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-composer-
-
-      # - name: Install Composer
-      #   uses: php-actions/composer@v6
-      #   with:
-      #     version: 2.2.x
-      #     php_version: 8.2
-      #     # Run the dummy help command after installing Composer (otherwise defaults to install)
-      #     command: help
-
-      # - name: Install Composer Dependencies
-      #   working-directory: ./main
-      #   run: composer install
 
       # could probably swap this to a docker container in future
       - name: Install NX
@@ -115,18 +99,6 @@ jobs:
           ref: docker-wrapper
           path: nx
 
-      - name: Nx Cache
-        id: nx-cache
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-nx
-        with:
-          path: |
-            ./main/nx
-            ./main/nx.json
-            ./main/workspace.json
-          key: nx-docker-wrapper-${{ github.event.pull_request.head.sha }}
-
       - name: Copy in NX files
         working-directory: ./main
         run: |
@@ -135,18 +107,6 @@ jobs:
           cp ${NXDIR}/nx.json ./
           cp ${NXDIR}/package.json ./
           cp ${NXDIR}/package-lock.json ./
-
-      - name: NPM Cache
-        id: npm-cache
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-npm
-        with:
-          path: |
-            ./main/node_modules
-          key: npm-docker-wrapper-${{ github.event.pull_request.head.sha }}
-          restore-keys: |
-            npm-docker-wrapper-${{ hashFiles('./main/package-lock.json') }}
 
       - name: Install NPM Deps
         working-directory: ./main
@@ -158,9 +118,6 @@ jobs:
         run: |
           npm run generate-workspace
 
-    ## TODO: this one leads to errors in the nx command, need to figure out why:
-    ## Error: fatal: Not a valid object name remotes/origin/
-    #                fatal: No such ref: 'remotes/origin/'
       - name: Print Affected
         working-directory: ./main
         run: |
@@ -224,10 +181,8 @@ jobs:
           cat ${AFFECTED_OUTPUT}
           echo "Affected Projects: $(jq .projects ${AFFECTED_OUTPUT})"
 
-      ## TODO: integrate matrix values as input for versions / tools to use while Mage-OS setup
-      ## values to DB distribution, search type [elastic or opensearch] still needs to be added.
-      - name: Setup Mage-OS
-        uses: ./main/.github/action/setup-mage-os
+      - name: Setup Warden Environment
+        uses: ./main/.github/action/setup-warden-environment
         with:
           php_version: ${{ matrix.php_version }}
           database_version: ${{ matrix.database_version }}
@@ -235,5 +190,11 @@ jobs:
           message_queue_version: ${{ matrix.message_queue_version }}
           cache_version: ${{ matrix.cache_version }}
           http_cache_version: ${{ matrix.http_cache_version }}
+          base_directory: "./main"
 
-       ## TODO: runa actual integration tests here for affected files
+      - name: Run Integration Tests
+        working-directory: ./main
+        run: |
+          export WARDEN="$(dirname $(pwd))/warden/bin/warden"
+          export DEN="$(dirname $(pwd))/warden/bin/warden"
+          nx affected --target=test:integration --head=HEAD --base=remotes/origin/${{ github.event.pull_request.base.ref }}

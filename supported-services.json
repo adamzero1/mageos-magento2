@@ -4,11 +4,15 @@
               8.1,
               8.2
           ],
+          "composer": [
+              "2.2.x"
+          ],
           "database": [
               "mariadb:10.6",
               "mysql:8.0"
           ],
           "search": [
+              "elasticsearch:8.4",
               "elasticsearch:7.17",
               "opensearch:2.5"
           ],

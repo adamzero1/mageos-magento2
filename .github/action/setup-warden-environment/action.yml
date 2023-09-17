@@ -43,6 +43,11 @@ inputs:
     default: "redis:7.0"
     description: "Redis version to use."
 
+  run_composer_install:
+    required: true
+    default: "0"
+    description: "Whether to run composer install or not."
+
   run_setup_install:
     required: true
     default: "0"
@@ -73,6 +78,11 @@ inputs:
     default: "0"
     description: "Whether to run admin user creation or not."
 
+  base_directory:
+    required: true
+    default: "./"
+    description: "Base directory for the Mage-OS codebase."
+
 runs:
   using: composite
   steps:
@@ -84,7 +94,7 @@ runs:
         ref: refs/tags/${{ inputs.warden_version }}
 
     - name: Init / Configure Warden
-      working-directory: ./main
+      working-directory: ${{ inputs.base_directory }}
       shell: bash
       env:
         PHP_VERSION: ${{ inputs.php_version }}
@@ -99,31 +109,37 @@ runs:
         echo "DEBUG .env\n" && cat .env
 
     - name: Warden svc up && Warden env up
-      working-directory: ./main
+      working-directory: ${{ inputs.base_directory }}
       shell: bash
       run: |
-          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          export DEN="$(dirname $(pwd))/warden/bin/warden"
           ${DEN} svc up 1>/dev/null 2>&1 && ${DEN} env up 1>/dev/null 2>&1
 
     - name: Change Directory Permissions
-      working-directory: ./main
+      working-directory: ${{ inputs.base_directory }}
       shell: bash
       run: |
-        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+        export DEN="$(dirname $(pwd))/warden/bin/warden"
         ${DEN} env exec -T php-fpm sudo chmod -R 777 .
 
     - name: composer install run
-      working-directory: ./main
+      working-directory: ${{ inputs.base_directory }}
       shell: bash
+      env:
+        RUN_INSTALL: ${{ inputs.run_composer_install }}
       run: |
-        export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
-        wget https://getcomposer.org/download/${{ inputs.composer_version }}/composer.phar -O composer.phar 1>/dev/null 2>&1 && chmod +x composer.phar
-        ${DEN} env exec -T php-fpm ls -la | grep composer
-        ${DEN} env exec -T php-fpm php composer.phar -v
-        ${DEN} env exec -T php-fpm php composer.phar install --no-interaction --no-progress
+        if [ $RUN_INSTALL == "1" ]; then
+          export DEN="$(dirname $(pwd))/warden/bin/warden"
+          wget https://getcomposer.org/download/${{ inputs.composer_version }}/composer.phar -O composer.phar 1>/dev/null 2>&1 && chmod +x composer.phar
+          ${DEN} env exec -T php-fpm ls -la | grep composer
+          ${DEN} env exec -T php-fpm php composer.phar -v
+          ${DEN} env exec -T php-fpm php composer.phar install --no-interaction --no-progress
+        else
+          echo "Skipping composer install"
+        fi
 
     - name: Install Magento
-      working-directory: ./main
+      working-directory: ${{ inputs.base_directory }}
       shell: bash
       env:
         SEARCH: ${{ inputs.search }}
@@ -140,11 +156,11 @@ runs:
         fi
 
     - name: Create Admin User
-      working-directory: ./main
+      working-directory: ${{ inputs.base_directory }}
       shell: bash
       run: |
         if [ ${{ inputs.run_admin_user_creation }} == "1" ]; then
-          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          export DEN="$(dirname $(pwd))/warden/bin/warden"
           ${DEN} env exec -T php-fpm php bin/magento admin:user:create \
           --admin-user=admin \
           --admin-password=abcABC123 \
@@ -156,11 +172,11 @@ runs:
         fi
 
     - name: Set All Magento Configs
-      working-directory: ./main
+      working-directory: ${{ inputs.base_directory }}
       shell: bash
       run: |
         if [ ${{ inputs.run_magento_config_preset }} == "1" ]; then
-          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          export DEN="$(dirname $(pwd))/warden/bin/warden"
           ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_adminhtml 1
           ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_frontend 1
           ${DEN} env exec -T php-fpm bin/magento config:set --lock-env web/secure/use_in_frontend 1
@@ -173,11 +189,11 @@ runs:
         fi
 
     - name: Run Magento Setup Upgrade
-      working-directory: ./main
+      working-directory: ${{ inputs.base_directory }}
       shell: bash
       run: |
         if [ ${{ inputs.run_setup_upgrade }} == "1" ]; then
-          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          export DEN="$(dirname $(pwd))/warden/bin/warden"
           ${DEN} env exec -T php-fpm bin/magento cache:flush
           ${DEN} env exec -T php-fpm bin/magento setup:upgrade
           ${DEN} env exec -T php-fpm bin/magento setup:db:status
@@ -186,33 +202,33 @@ runs:
         fi
 
     - name: Set to production mode
-      working-directory: ./main
+      working-directory: ${{ inputs.base_directory }}
       shell: bash
       run: |
         if [ ${{ inputs.run_production_deploy_mode }} == "1" ]; then
-          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          export DEN="$(dirname $(pwd))/warden/bin/warden"
           ${DEN} env exec -T php-fpm bin/magento deploy:mode:set production
         else
           echo "Skipping deploy:mode:set production"
         fi
 
     - name: Run Magento Re-indexation
-      working-directory: ./main
+      working-directory: ${{ inputs.base_directory }}
       shell: bash
       run: |
         if [ ${{ inputs.run_reindex }} == "1" ]; then
-          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          export DEN="$(dirname $(pwd))/warden/bin/warden"
           ${DEN} env exec -T php-fpm bin/magento indexer:reindex
         else
           echo "Skipping indexer:reindex"
         fi
 
     - name: Run PHP BIN/MAGENTO
-      working-directory: ./main
+      working-directory: ${{ inputs.base_directory }}
       shell: bash
       run: |
         if [ ${{ inputs.run_setup_install }} == "1" ]; then
-          export DEN=/home/runner/work/mageos-magento2/mageos-magento2/warden/bin/warden
+          export DEN="$(dirname $(pwd))/warden/bin/warden"
           ${DEN} env exec -T php-fpm php bin/magento
         else
           echo "Skipping php bin/magento test command"

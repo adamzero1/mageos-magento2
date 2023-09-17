@@ -1,5 +1,6 @@
-name: Mage-OS Setup in Warden
-run-name: ${{ github.actor }} is running Mage-OS Setup in warden
+name: Install Tests
+description: Test Mage-OS installation and install process
+run-name: ${{ github.actor }} is running Install Tests
 on:
   workflow_dispatch: { }
   push:
@@ -80,6 +81,7 @@ jobs:
           varnish: ${{ matrix.http_cache_version }}
           rabbitmq: ${{ matrix.message_queue_version }}
           redis: ${{ matrix.cache_version }}
+          run_composer_install: "1"
           run_setup_install: "1"
           run_setup_upgrade: "1"
           run_reindex: "1"

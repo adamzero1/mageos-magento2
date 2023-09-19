@@ -114,10 +114,15 @@ runs:
       run: |
           export DEN="$(dirname $(pwd))/warden/bin/warden"
           echo "PWD: $(pwd)"
-          echo "DEN: ${DEV}"
-          ls 
+          echo "DEN: ${DEN}"
           echo "=================="
           ls ../
+          echo "=================="
+          ls ../warden/
+          echo "=================="
+          ls ../warden/bin/
+          echo "=================="
+          echo "=================="
           ${DEN} svc up 1>/dev/null 2>&1 && ${DEN} env up 1>/dev/null 2>&1
 
     - name: Change Directory Permissions

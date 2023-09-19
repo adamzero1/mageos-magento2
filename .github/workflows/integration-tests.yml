@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - feature/magento-setup*
+      - nx-integration-tests
+
   pull_request:
     branches:
       - 2.4-develop
@@ -197,4 +199,3 @@ jobs:
           export WARDEN="$(dirname $(pwd))/warden/bin/warden"
           export DEN="$(dirname $(pwd))/warden/bin/warden"
           nx affected --target=test:integration --head=HEAD --base=remotes/origin/${{ github.event.pull_request.base.ref }}
-

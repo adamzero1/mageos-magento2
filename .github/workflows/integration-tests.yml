@@ -193,6 +193,26 @@ jobs:
           varnish: ${{ matrix.http_cache_version }}
           base_directory: "./main"
 
+      - name: Setup config for Integration tests
+        uses: ./main/.github/action/warden/run-integration-tests
+        with:
+          search: ${{ matrix.search_version }}
+          rabbitmq: ${{ matrix.message_queue_version }}
+          redis: ${{ matrix.cache_version }}
+          run_memory_test: 0
+          run_magento_integration_tests: 0
+          run_magento_integration_tests_real_suite: 0
+
+      - name: Run Memory Tests
+        uses: ./main/.github/action/warden/run-integration-tests
+        with:
+          search: ${{ matrix.search_version }}
+          rabbitmq: ${{ matrix.message_queue_version }}
+          redis: ${{ matrix.cache_version }}
+          run_memory_test: 1
+          run_magento_integration_tests: 0
+          run_magento_integration_tests_real_suite: 0
+
       - name: Run Integration Tests
         working-directory: ./main
         run: |

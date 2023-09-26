@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - feature/magento-setup*
-      - nx-integration-tests
+#      - nx-integration-tests
 
   pull_request:
     branches:
@@ -186,11 +186,11 @@ jobs:
         uses: ./main/.github/action/warden/setup-environment
         with:
           php_version: ${{ matrix.php_version }}
-          database_version: ${{ matrix.database_version }}
-          search_version: ${{ matrix.search_version }}
-          message_queue_version: ${{ matrix.message_queue_version }}
-          cache_version: ${{ matrix.cache_version }}
-          http_cache_version: ${{ matrix.http_cache_version }}
+          database: ${{ matrix.database_version }}
+          search: ${{ matrix.search_version }}
+          rabbitmq: ${{ matrix.message_queue_version }}
+          redis: ${{ matrix.cache_version }}
+          varnish: ${{ matrix.http_cache_version }}
           base_directory: "./main"
 
       - name: Run Integration Tests

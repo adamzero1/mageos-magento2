@@ -115,15 +115,12 @@ runs:
           export DEN="$(dirname $(pwd))/warden/bin/warden"
           echo "PWD: $(pwd)"
           echo "DEN: ${DEN}"
-          echo "=================="
-          ls ../
-          echo "=================="
-          ls ../warden/
-          echo "=================="
-          ls ../warden/bin/
+          ls -lath ${DEN}
           echo "=================="
           echo "=================="
-          ${DEN} svc up 1>/dev/null 2>&1 && ${DEN} env up 1>/dev/null 2>&1
+          set -ex
+          ${DEN} svc up 
+          ${DEN} env up
 
     - name: Change Directory Permissions
       working-directory: ${{ inputs.base_directory }}

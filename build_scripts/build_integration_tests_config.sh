@@ -9,7 +9,7 @@ SEARCH_ENGINE_VERSION=${SEARCH##:*}
 
 case "$SEARCH" in
   elasticsearch:*)
-    SEARCH_HOST="mageos-elasticsearch"
+    SEARCH_HOST="elasticsearch"
   ;;&
   elasticsearch:5*)
     SEARCH_ENGINE="elasticsearch5"

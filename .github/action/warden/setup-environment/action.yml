@@ -123,6 +123,26 @@ runs:
         export DEN="$(dirname $(pwd))/warden/bin/warden"
         ${DEN} env exec -T php-fpm sudo chmod -R 777 .
 
+    - name: Wait for environment to be ready
+      working-directory: ${{ inputs.base_directory }}
+      shell: bash
+      env:
+        SEARCH: ${{ inputs.search }}
+      run: |
+          export DEN="$(dirname $(pwd))/warden/bin/warden"
+          case "${SEARCH}" in
+            elasticsearch:*)
+              SEARCH_HOST="elasticsearch"
+            ;;
+            *)
+              SEARCH_HOST="opensearch"
+            ;;
+          esac
+
+          # TODO
+          # curl --write-out %{http_code} --silent --output /dev/null http://${SEARCH_HOST}:9200/_cat/health?h=st)
+          sleep 60
+
     - name: composer install run
       working-directory: ${{ inputs.base_directory }}
       shell: bash

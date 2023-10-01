@@ -97,7 +97,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: adamzero1/nx-for-php
-          ref: docker-wrapper
+          ref: docker-wrapper-2
           path: nx
 
       - name: Copy in NX files
@@ -117,7 +117,9 @@ jobs:
       - name: Generate Nx Workspace
         working-directory: ./main
         run: |
-          npm run generate-workspace
+          npm run generate-workspace -- --commands=test:unit,test:integration \
+            --test:unit='if [ -d {{ MODULE_PATH }}Test/Unit ]; then ${DEN} env exec -T php-fpm ./vendor/bin/phpunit -c dev/tests/unit/phpunit.xml {{ MODULE_PATH }}Test/Unit; else echo "{{ MODULE_NAME }} has no unit test; fi' \
+            --test:integration='${DEN} env exec -T --workdir /var/www/html/dev/tests/integration php-fpm ../../../vendor/bin/phpunit --configuration phpunit.xml.dist --testsuite '"'"'Magento Integration Tests Real Suite'"'"' --filter='"'"'/Magento/{{ MODULE_DIRECTORY }}/|Magento\{{ MODULE_DIRECTORY }}'"'"' --log-junit=../../../phpunit-output/junit/{{ MODULE_DIRECTORY }}.xml --coverage-html=../../../phpunit-output/coverage-html/{{ MODULE_DIRECTORY }}'
 
       - name: Print Affected
         working-directory: ./main
@@ -226,6 +228,5 @@ jobs:
       - name: Run Integration Tests (Real)
         working-directory: ./main
         run: |
-          export WARDEN="$(dirname $(pwd))/warden/bin/warden"
           export DEN="$(dirname $(pwd))/warden/bin/warden"
           nx affected --target=test:integration --head=HEAD --base=remotes/origin/${{ github.event.pull_request.base.ref }}

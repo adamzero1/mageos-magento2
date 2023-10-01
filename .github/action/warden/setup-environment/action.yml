@@ -113,12 +113,6 @@ runs:
       shell: bash
       run: |
           export DEN="$(dirname $(pwd))/warden/bin/warden"
-          echo "PWD: $(pwd)"
-          echo "DEN: ${DEN}"
-          ls -lath ${DEN}
-          echo "=================="
-          echo "=================="
-          set -ex
           ${DEN} svc up 
           ${DEN} env up
 

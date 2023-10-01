@@ -234,5 +234,7 @@ jobs:
           docker ps -a
           docker inspect mageos-elasticsearch-1
           ${DEN} env ls
+          sleep 120
+          docker ps -a
           #${DEN} env exec -T --workdir /var/www/html/dev/tests/integration php-fpm ../../../vendor/bin/phpunit --configuration phpunit.xml.dist --testsuite 'Magento Integration Tests Real Suite' --filter='/Magento/AdminAnalytics/|Magento\\AdminAnalytics' --log-junit=../../../phpunit-output/junit/AdminAnalytics.xml --coverage-html=../../../phpunit-output/coverage-html/AdminAnalytics
           nx affected --target=test:integration --head=HEAD --base=remotes/origin/${{ github.event.pull_request.base.ref }}

@@ -8,19 +8,19 @@ SEARCH_ENGINE_TYPE=${SEARCH%%:*}
 SEARCH_ENGINE_VERSION=${SEARCH##:*}
 
 case "$SEARCH" in
+  elasticsearch:*)
+    SEARCH_HOST="mageos-elasticsearch"
+  ;;&
   elasticsearch:5*)
     SEARCH_ENGINE="elasticsearch5"
-    SEARCH_HOST="elasticsearch"
     SEARCH_PARAMS="'search-engine' => '$SEARCH_ENGINE', 'elasticsearch-host' => '$SEARCH_HOST', 'elasticsearch-port' => 9200,"
     ;;
   elasticsearch:6*)
     SEARCH_ENGINE="elasticsearch6"
-    SEARCH_HOST="elasticsearch"
     SEARCH_PARAMS="'search-engine' => '$SEARCH_ENGINE', 'elasticsearch-host' => '$SEARCH_HOST', 'elasticsearch-port' => 9200,"
     ;;
   elasticsearch:7* | elasticsearch:8*)
     SEARCH_ENGINE="elasticsearch7"
-    SEARCH_HOST="elasticsearch"
     SEARCH_PARAMS="'search-engine' => '$SEARCH_ENGINE', 'elasticsearch-host' => '$SEARCH_HOST', 'elasticsearch-port' => 9200,"
     ;;
   opensearch:*)
@@ -30,7 +30,7 @@ case "$SEARCH" in
     ;;
   *)
     SEARCH_ENGINE="elasticsearch7"
-    SEARCH_HOST="elasticsearch"
+    SEARCH_HOST="UKNOWN"
     SEARCH_PARAMS="'search-engine' => '$SEARCH_ENGINE', 'elasticsearch-host' => '$SEARCH_HOST', 'elasticsearch-port' => 9200,"
     ;;
 esac

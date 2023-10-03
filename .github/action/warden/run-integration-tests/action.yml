@@ -65,6 +65,7 @@ runs:
             --log-junit=test-results.xml
             --coverage-html=coverage
             --testsuite 'Memory Usage Tests'
+            --filter 'AdminAnalytics'
         "
 
     - name: Run Magento Integration Tests

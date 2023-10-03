@@ -129,19 +129,20 @@ runs:
       env:
         SEARCH: ${{ inputs.search }}
       run: |
-          export DEN="$(dirname $(pwd))/warden/bin/warden"
-          case "${SEARCH}" in
-            elasticsearch:*)
-              SEARCH_HOST="elasticsearch"
-            ;;
-            *)
-              SEARCH_HOST="opensearch"
-            ;;
-          esac
+        sleep 60
+#          export DEN="$(dirname $(pwd))/warden/bin/warden"
+#          case "${SEARCH}" in
+#            elasticsearch:*)
+#              SEARCH_HOST="elasticsearch"
+#            ;;
+#            *)
+#              SEARCH_HOST="opensearch"
+#            ;;
+#          esac
 
-          # TODO
-          # curl --write-out %{http_code} --silent --output /dev/null http://${SEARCH_HOST}:9200/_cat/health?h=st)
-          sleep 60
+#          # TODO
+#          # curl --write-out %{http_code} --silent --output /dev/null http://${SEARCH_HOST}:9200/_cat/health?h=st)
+          
 
     - name: composer install run
       working-directory: ${{ inputs.base_directory }}

@@ -185,7 +185,7 @@ jobs:
           echo "Affected Projects: $(jq .projects ${AFFECTED_OUTPUT})"
 
       - name: Setup Warden Environment
-        uses: ./main/.github/action/warden/setup-environment
+        uses: adamzero1/mageos-github-actions/warden/setup-environment@main
         with:
           php_version: ${{ matrix.php_version }}
           database: ${{ matrix.database_version }}

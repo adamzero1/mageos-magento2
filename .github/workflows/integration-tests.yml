@@ -196,7 +196,7 @@ jobs:
           base_directory: "./main"
 
       - name: Setup config for Integration tests
-        uses: ./main/.github/action/warden/run-integration-tests
+        uses: adamzero1/mageos-github-actions/warden/integration-tests@main
         with:
           search: ${{ matrix.search_version }}
           rabbitmq: ${{ matrix.message_queue_version }}
@@ -204,6 +204,7 @@ jobs:
           run_memory_test: 0
           run_magento_integration_tests: 0
           run_magento_integration_tests_real_suite: 0
+          base_directory: "./main"
 
       # - name: Run Memory Tests
       #   uses: ./main/.github/action/warden/run-integration-tests

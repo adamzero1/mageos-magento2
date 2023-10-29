@@ -1,0 +1,92 @@
+name: Integration Tests - Extended
+run-name: ${{ github.actor }} is running Extended Integration Tests
+on:
+workflow_dispatch:
+  inputs:
+    run_memory_test:
+      description: 'Run Memory Test Suite'
+      required: true
+      default: '0'
+    run_magento_integration_tests:
+      description: 'Run Integration Test Suite'
+      required: true
+      default: '0'
+    run_magento_integration_tests_real_suite:
+      description: 'Run Real Integration Test Suite'
+      required: true
+      default: '0'
+
+permissions:
+  contents: write
+
+jobs:
+### we have this matrix calculator everywhere - should be extract it to some action?
+  matrix-calculator:
+    runs-on: ubuntu-latest
+    outputs:
+      php_versions: ${{ steps.set-matrix.outputs.php_versions }}
+      database_versions: ${{ steps.set-matrix.outputs.database_versions }}
+      search_versions: ${{ steps.set-matrix.outputs.search_versions }}
+      message_queue_versions: ${{ steps.set-matrix.outputs.message_queue_versions }}
+      cache_versions: ${{ steps.set-matrix.outputs.cache_versions }}
+      http_cache_versions: ${{ steps.set-matrix.outputs.http_cache_versions }}
+    steps:
+      - name: Checkout PR commit
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - id: set-matrix
+        name: Calculate Matrix
+        run: |
+          echo "php_versions=$(jq -c .services.php supported-services.json)" >> "$GITHUB_OUTPUT"
+          echo "database_versions=$(jq -c .services.database supported-services.json)" >> "$GITHUB_OUTPUT"
+          echo "search_versions=$(jq -c .services.search supported-services.json)" >> "$GITHUB_OUTPUT"
+          echo "message_queue_versions=$(jq -c .services.message_queue supported-services.json)" >> "$GITHUB_OUTPUT"
+          echo "cache_versions=$(jq -c .services.cache supported-services.json)" >> "$GITHUB_OUTPUT"
+          echo "http_cache_versions=$(jq -c .services.http_cache supported-services.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Debug output
+        run: |
+          echo "PHP Versions: ${{ steps.set-matrix.outputs.php_versions }}"
+          echo "database Versions: ${{ steps.set-matrix.outputs.database_versions }}"
+          echo "search Versions: ${{ steps.set-matrix.outputs.search_versions }}"
+          echo "message_queue Versions: ${{ steps.set-matrix.outputs.message_queue_versions }}"
+          echo "cache Versions: ${{ steps.set-matrix.outputs.cache_versions }}"
+          echo "http_cache Versions: ${{ steps.set-matrix.outputs.http_cache_versions }}"
+
+  integration-tests:
+    needs: [matrix-calculator]
+    strategy:
+      fail-fast: false
+      matrix:
+        php_version: ${{ fromJSON(needs.matrix-calculator.outputs.php_versions) }}
+        database_version: ${{ fromJSON(needs.matrix-calculator.outputs.database_versions) }}
+        search_version: ${{ fromJSON(needs.matrix-calculator.outputs.search_versions) }}
+        message_queue_version: ${{ fromJSON(needs.matrix-calculator.outputs.message_queue_versions) }}
+        cache_version: ${{ fromJSON(needs.matrix-calculator.outputs.cache_versions) }}
+        http_cache_version: ${{ fromJSON(needs.matrix-calculator.outputs.http_cache_versions) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Warden Environment
+        uses: adamzero1/mageos-github-actions/warden/setup-environment@main
+        with:
+          php_version: ${{ matrix.php_version }}
+          database: ${{ matrix.database_version }}
+          search: ${{ matrix.search_version }}
+          rabbitmq: ${{ matrix.message_queue_version }}
+          redis: ${{ matrix.cache_version }}
+          varnish: ${{ matrix.http_cache_version }}
+          base_directory: "./main"
+
+      - name: Setup config for Integration tests
+        uses: adamzero1/mageos-github-actions/warden/integration-tests@main
+        with:
+          search: ${{ matrix.search_version }}
+          rabbitmq: ${{ matrix.message_queue_version }}
+          redis: ${{ matrix.cache_version }}
+          run_memory_test: ${{ github.event.inputs.run_memory_test }}
+          run_magento_integration_tests: ${{ github.event.inputs.run_magento_integration_tests }}
+          run_magento_integration_tests_real_suite: ${{ github.event.inputs.run_magento_integration_tests_real_suite }}
+          base_directory: "./main"
+

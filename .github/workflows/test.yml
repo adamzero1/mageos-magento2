@@ -1,0 +1,13 @@
+name: Integration Tests
+on:
+  workflow_call:
+    inputs:
+      run_memory_test:
+        type: boolean
+        description: Run memory tests?
+        required: true
+        default: true
+jobs:
+  test:
+    run: |
+      echo "yo!: {inputs.run_memory_test}"

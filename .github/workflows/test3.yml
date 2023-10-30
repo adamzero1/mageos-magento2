@@ -1,0 +1,25 @@
+name: Integration Tests (test??????????)
+on:
+  workflow_dispatch:
+    inputs:
+      run_memory_test:
+        type: boolean
+        description: Run memory tests?
+        required: true
+        default: true
+      log_level:
+        description: log level
+        required: false
+        default: "info"
+        type: string
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: test
+        env: 
+          run_memory_tests: ${{ inputs.run_memory_test }}
+          log_level: ${{ inputs.log_level }}
+        run: |
+          echo "yo!: ${run_memory_test}"
+          echo "blah: ${log_level}

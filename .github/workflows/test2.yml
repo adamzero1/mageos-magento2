@@ -1,5 +1,8 @@
 name: Integration Tests (test?)
 on:
+  push:
+    branches:
+      - nx-integration-tests
   workflow_dispatch:
     inputs:
       run_memory_test:

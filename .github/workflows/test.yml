@@ -8,7 +8,9 @@ on:
         required: true
         default: true
 jobs:
-  steps:
-    test:
-      run: |
-        echo "yo!: {inputs.run_memory_test}"
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: test
+        run: |
+          echo "yo!: {inputs.run_memory_test}"

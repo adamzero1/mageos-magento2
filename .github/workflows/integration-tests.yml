@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   call-workflow:
-    uses: adamzero1/mageos-github-actions/.github/workflows/nx-integration-tests.yml@9fab9a1702aa4d9262442938c59cbbc88a346257
+    uses: adamzero1/mageos-github-actions/.github/workflows/nx-integration-tests.yml@{main}
     secrets: inherit
     with:
       foo: bar

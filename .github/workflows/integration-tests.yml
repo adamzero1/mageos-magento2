@@ -20,7 +20,6 @@ jobs:
     uses: adamzero1/mageos-github-actions/.github/workflows/nx-integration-tests.yml@main
     secrets: inherit
     with:
-      foo: barzz
       repository: ${{ github.repository }}
       pr_head: ${{ github.event.pull_request.head.sha }}
       pr_base: ${{ github.event.pull_request.base.ref }}

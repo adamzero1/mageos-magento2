@@ -16,16 +16,21 @@ permissions:
   contents: write
 
 jobs:
-  # call-workflow:
-  #   uses: adamzero1/mageos-github-actions/integration-tests/nx@main
-  #   secrets: inherit
+  call-workflow:
+    uses: adamzero1/mageos-github-actions/.github/workflows/nx-integration-tests.yml@main
+    secrets: inherit
+    with:
+      repository: ${{ github.repository }}
+      pr_head: ${{ github.event.pull_request.head.sha }}
+      pr_base: ${{ github.event.pull_request.base.ref }}
 
-  integration-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Inte tests
-        uses: adamzero1/mageos-github-actions/integration-tests/nx@main
-        with:
-          repository: ${{ github.repository }}
-          pr_head: ${{ github.event.pull_request.head.sha }}
-          pr_base: ${{ github.event.pull_request.base.ref }}
+
+  # integration-tests:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Inte tests
+  #       uses: adamzero1/mageos-github-actions/integration-tests/nx@main
+  #       with:
+  #         repository: ${{ github.repository }}
+  #         pr_head: ${{ github.event.pull_request.head.sha }}
+  #         pr_base: ${{ github.event.pull_request.base.ref }}

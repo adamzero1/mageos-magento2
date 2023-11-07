@@ -25,7 +25,6 @@ jobs:
       pr_head: ${{ github.event.pull_request.head.sha }}
       pr_base: ${{ github.event.pull_request.base.ref }}
 
-
   # integration-tests:
   #   runs-on: ubuntu-latest
   #   steps:

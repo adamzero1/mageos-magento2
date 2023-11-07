@@ -1,5 +1,5 @@
-name: Integration Tests (Using Nx)??
-run-name: ${{ github.actor }} is running Unit Tests???
+name: Integration Tests (Using Nx)
+run-name: ${{ github.actor }} is running Integration Tests
 on:
   push:
     branches:
@@ -17,6 +17,7 @@ permissions:
 
 jobs:
   call-workflow:
+    name: calling nx integration tests
     uses: adamzero1/mageos-github-actions/.github/workflows/nx-integration-tests.yml@main
     secrets: inherit
     with:

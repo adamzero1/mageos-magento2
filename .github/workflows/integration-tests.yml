@@ -16,7 +16,8 @@ permissions:
 jobs:
   call-workflow:
     name: calling nx integration tests
-    uses: adamzero1/mageos-github-actions/.github/workflows/nx-integration-tests.yml@main
+    #uses: adamzero1/mageos-github-actions/.github/workflows/nx-integration-tests.yml@main
+    uses: adamzero1/mageos-github-actions/.github/workflows/testing.yml@main
     secrets: inherit
     with:
       repository: ${{ github.repository }}

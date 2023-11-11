@@ -1,0 +1,57 @@
+name: Composer Install Tests
+description: Run composer install for all iterations of composer version and php version
+run-name: ${{ github.actor }} is running Composer Install Tests
+on:
+  workflow_dispatch: { }
+  push:
+    branches:
+      - feature/magento-setup*
+
+permissions:
+  contents: write
+
+jobs:
+  matrix-calculator:
+    runs-on: ubuntu-latest
+    outputs:
+      php_versions: ${{ steps.set-matrix.outputs.php_versions }}
+      composer_versions: ${{ steps.set-matrix.outputs.composer_versions }}
+    steps:
+      - name: Checkout PR commit
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - id: set-matrix
+        name: Calculate Matrix
+        run: |
+          echo "php_versions=$(jq -c .services.php supported-services.json)" >> "$GITHUB_OUTPUT"
+          echo "composer_versions=$(jq -c .services.composer supported-services.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Debug output
+        run: |
+          echo "PHP Versions: ${{ steps.set-matrix.outputs.php_versions }}"
+          echo "Composer Versions: ${{ steps.set-matrix.outputs.composer_versions }}"
+
+  mage-os-setup-run:
+    runs-on: ubuntu-latest
+    needs: [matrix-calculator]
+    strategy:
+      fail-fast: false
+      matrix:
+        php_version: ${{ fromJSON(needs.matrix-calculator.outputs.php_versions) }}
+        composer_version: ${{ fromJSON(needs.matrix-calculator.outputs.composer_versions) }}
+    steps:
+      - name: Debug output
+        run: |
+          echo "PHP Versions: ${{ matrix.php_version }}"
+          echo "Composer Versions: ${{ matrix.composer_version }}"
+
+      - name: Composer Install
+        uses: php-actions/composer@v6
+        with:
+          version: ${{ matrix.composer_version }}
+          php_version: ${{ matrix.php_version }}
+          args: "--ignore-platform-reqs --optimize-autoloader"
+          working_dir: main
+

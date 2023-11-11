@@ -124,7 +124,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Warden Environment
-        uses: adamzero1/mageos-github-actions/warden/setup-environment@main
+        uses: mage-os/github-actions/warden/setup-environment@main
         with:
           run_composer_install: 1
           php_version: ${{ matrix.php_version }}
@@ -200,7 +200,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Warden Environment
-        uses: adamzero1/mageos-github-actions/warden/setup-environment@main
+        uses: mage-os/github-actions/warden/setup-environment@main
         with:
           run_composer_install: 1
           php_version: ${{ matrix.php_version }}

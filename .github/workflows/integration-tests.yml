@@ -4,13 +4,11 @@ on:
   push:
     branches:
       - feature/magento-setup*
-#      - nx-integration-tests
 
   pull_request:
     branches:
       - 2.4-develop
       - nx-integration-tests
-#      - feature/magento-setup*
 
 permissions:
   contents: write

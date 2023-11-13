@@ -136,7 +136,7 @@ jobs:
           base_directory: "./main"
 
       - name: Setup configs for Integration Tests
-        uses: vpodorozh/github-actions/warden/integration-tests@vpodorozh-patch-1
+        uses: mage-os/github-actions/warden/integration-tests@main
         with:
           search: ${{ matrix.search_version }}
           rabbitmq: ${{ matrix.message_queue_version }}
@@ -212,7 +212,7 @@ jobs:
           base_directory: "./main"
 
       - name: Run Integration tests
-        uses: vpodorozh/github-actions/warden/integration-tests@vpodorozh-patch-1
+        uses: mage-os/github-actions/warden/integration-tests@main
         with:
           search: ${{ matrix.search_version }}
           rabbitmq: ${{ matrix.message_queue_version }}
